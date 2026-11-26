@@ -95,6 +95,15 @@ try {
   await noOverflow(page, 'desktop atlas');
   await shot(page, 'desktop-atlas');
   performance.atlas = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__, resources: performance.getEntriesByType('resource').length, transferBytes: performance.getEntriesByType('resource').reduce((sum, entry) => sum + (entry.transferSize || 0), 0) }));
+  const journeysTrigger = page.getByRole('button', { name: 'Follow a curated journey' });
+  await journeysTrigger.click();
+  await page.getByRole('dialog').waitFor();
+  check('curated journeys expose seven real TRAPPIST-1 stops', await page.locator('.journey-list article').first().locator('.journey-stops button').count() === 7);
+  await page.keyboard.press('Shift+Tab');
+  check('curated journey dialog contains reverse keyboard focus', await page.evaluate(() => Boolean(document.querySelector('.journeys-panel')?.contains(document.activeElement))));
+  await shot(page, 'desktop-journeys');
+  await page.keyboard.press('Escape');
+  check('closing journeys restores trigger focus', await journeysTrigger.evaluate((element) => document.activeElement === element));
 
   await page.getByLabel('Search planets or host stars').fill('TRAPPIST-1 e');
   await page.locator('.search-results button').filter({ hasText: 'TRAPPIST-1 e' }).first().click();

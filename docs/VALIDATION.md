@@ -1,10 +1,10 @@
 # Validation results
 
-Cinematic-checkpoint production-preview validation completed at `2026-11-26T09:01:09.744Z` after the final shader refinement. The machine-readable sources of truth are `evidence/browser-report.json`, `evidence/data-report.json`, and the reference-capture manifests; the screenshots listed below are committed evidence, not design mockups.
+Wonder/Observatory-checkpoint production-preview validation completed at `2026-11-26T15:27:27.211Z`. The machine-readable sources of truth are `evidence/browser-report.json`, `evidence/data-report.json`, and the reference-capture manifests; the screenshots listed below are committed evidence, not design mockups.
 
 ## Automated checks
 
-- **Unit/logic:** 6 test files, **25/25 tests passed** with Vitest.
+- **Unit/logic:** 7 test files, **31/31 tests passed** with Vitest.
   - Parsing, malformed rows, duplicate identifiers, null handling, and atlas source labels.
   - Search and every filter.
   - Deterministic generation, giant/rocky treatments, measured-parameter influence, gravity, and orbital labels.
@@ -13,14 +13,15 @@ Cinematic-checkpoint production-preview validation completed at `2026-11-26T09:0
   - Raw JSON/CSV source export, CSV escaping, and null preservation.
   - URL round trips, malformed values, camera clamps, and evidence-state rules.
 - **Data integrity:** 6,473 parsed rows match provenance; 6,473 unique planet identifiers and 4,865 systems. The preserved base SHA-256 matches `6bcd8b57…cb362`. All **84,149** base/companion measurement comparisons and **440,164** raw/normalized cell comparisons passed across 2,321 shared publication references.
-- **Production build:** TypeScript `--noEmit` and Vite build passed. Vite reports a large-chunk warning for the 797.46 kB minified main bundle (217.93 kB gzip); this is documented rather than suppressed.
+- **Production build:** TypeScript `--noEmit` and Vite build passed. Vite reports a large-chunk warning for the 805.07 kB minified main bundle (220.18 kB gzip); this is documented rather than suppressed.
 - **CLI:** `npm run dev -- --help` reached Vite and displayed its `--host`, `--port`, and `--strictPort` options, confirming argument forwarding. Node.js 24.22.1 was used.
 
 ## Real-browser release gate
 
-Playwright Chromium 159.0.8154.6 ran against the production `dist/` through an owned Vite preview process. **42/42 checks passed**, including:
+Playwright Chromium 159.0.8154.6 ran against the production `dist/` through an owned Vite preview process. **45/45 checks passed**, including:
 
 - Full atlas → search → TRAPPIST-1 system → approach → evidence → share journey.
+- Three curated journeys, seven real TRAPPIST-1 stops, keyboard focus containment, and trigger-focus restoration.
 - Seven real TRAPPIST-1 sibling controls and source-field labels.
 - Exact TRAPPIST-1 e asymmetric uncertainty display and an actionable Agol et al. 2021 publication link.
 - Actual raw JSON and CSV downloads with source values, uncertainty fields, and both snapshot queries.

@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowUpRight, Download, X } from 'lucide-react';
 import type { Catalogue, EvidenceStatus, PlanetRow, Provenance, TraceabilityRow } from '../types';
 import { detectionLabels, evidenceFor } from '../lib/evidence';
 import { downloadText, rawExportDocument, rawPlanetRecord, recordsToCsv, safeFilename } from '../lib/exports';
+import { useDialogFocus } from '../lib/useDialogFocus';
 
 interface EvidencePanelProps {
   planet: PlanetRow;
@@ -21,6 +22,7 @@ const STATUS_COPY: Record<EvidenceStatus, string> = {
 
 export default function EvidencePanel({ planet, catalogue, provenance, traceProvenance, trace, onClose }: EvidencePanelProps) {
   const [status, setStatus] = useState<EvidenceStatus>('MEASURED');
+  const dialogRef = useDialogFocus<HTMLElement>(onClose);
   const siblings = catalogue.systems.get(planet.hostname) ?? [planet];
   const evidence = useMemo(() => evidenceFor(planet, siblings, trace), [planet, siblings, trace]);
   const detections = detectionLabels(planet);
@@ -30,21 +32,15 @@ export default function EvidencePanel({ planet, catalogue, provenance, traceProv
     IMAGINED: evidence.filter((item) => item.status === 'IMAGINED').length,
   }), [evidence]);
 
-  useEffect(() => {
-    const listener = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', listener);
-    return () => window.removeEventListener('keydown', listener);
-  }, [onClose]);
-
   return (
     <div className="evidence-layer">
-      <button className="evidence-backdrop" onClick={onClose} aria-label="Close evidence inspector" />
-      <aside className="evidence-panel" role="dialog" aria-modal="true" aria-labelledby="evidence-title">
+      <button className="evidence-backdrop" onClick={onClose} aria-label="Close evidence inspector" tabIndex={-1} />
+      <aside ref={dialogRef} className="evidence-panel" role="dialog" aria-modal="true" aria-labelledby="evidence-title">
         <header className="evidence-header">
-          <div><span className="section-label">Field notes / {planet.hostname}</span><h2 id="evidence-title">What do we know?</h2></div>
-          <button className="icon-button" onClick={onClose} aria-label="Close evidence" autoFocus><X size={20} /></button>
+          <div><span className="section-label">Observatory / {planet.hostname}</span><h2 id="evidence-title">What do we know?</h2></div>
+          <button className="icon-button" onClick={onClose} aria-label="Close evidence"><X size={20} /></button>
         </header>
-        <p className="evidence-intro">The portrait is a reconstruction. The evidence is not.</p>
+        <p className="evidence-intro">The portrait is a reconstruction. The evidence is not. Every available uncertainty, limit, and publication stays attached to its own parameter.</p>
         <div className="evidence-tabs" aria-label="Evidence categories">
           {(['MEASURED', 'DERIVED', 'IMAGINED'] as EvidenceStatus[]).map((name) => (
             <button key={name} className={status === name ? 'active' : ''} aria-pressed={status === name} onClick={() => setStatus(name)}>

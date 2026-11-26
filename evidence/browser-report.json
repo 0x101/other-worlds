@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-26T09:01:09.744Z",
+  "validatedAt": "2026-11-26T15:27:27.211Z",
   "mode": "preview",
   "baseUrl": "http://127.0.0.1:7100",
   "checks": [
@@ -22,6 +22,21 @@
         "height": 960,
         "scrollHeight": 960
       }
+    },
+    {
+      "name": "curated journeys expose seven real TRAPPIST-1 stops",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "curated journey dialog contains reverse keyboard focus",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "closing journeys restores trigger focus",
+      "pass": true,
+      "details": null
     },
     {
       "name": "search selects the real planetary system",
@@ -266,19 +281,19 @@
       "ready": true,
       "view": "atlas",
       "planet": null,
-      "fps": 43,
+      "fps": 48,
       "drawCalls": 7,
       "triangles": 2,
       "systems": 4865,
       "planets": 6473,
       "resources": 11,
-      "transferBytes": 1690701
+      "transferBytes": 1693719
     },
     "planet": {
       "ready": true,
       "view": "planet",
       "planet": "TRAPPIST-1 e",
-      "fps": 26,
+      "fps": 17,
       "drawCalls": 5,
       "triangles": 26498,
       "systems": 4865,
@@ -289,6 +304,7 @@
     "desktop-atlas.png",
     "desktop-evidence.png",
     "desktop-gas-giant-reduced-motion.png",
+    "desktop-journeys.png",
     "desktop-planet.png",
     "desktop-static-fallback.png",
     "desktop-system.png",

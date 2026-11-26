@@ -100,13 +100,25 @@ export interface CameraViewState {
   elevation: number;
 }
 
+export type ExperienceName = 'wonder' | 'observatory' | 'studio';
+export type StudioComposition = 'left' | 'center' | 'right';
+export type PostcardCrop = 'wide' | 'square';
+
+export interface StudioState {
+  exposure: number;
+  composition: StudioComposition;
+  crop: PostcardCrop;
+}
+
 export interface JourneyState {
   view: ViewName;
   planetName: string | null;
   filter: FilterName;
   query: string;
+  experience: ExperienceName;
   evidenceOpen: boolean;
   camera: CameraViewState;
+  studio: StudioState;
 }
 
 export type EvidenceStatus = 'MEASURED' | 'DERIVED' | 'IMAGINED';

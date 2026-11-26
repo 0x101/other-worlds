@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUpRight, Orbit, Share2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Orbit, Share2 } from 'lucide-react';
 import Scene from './components/Scene';
 import StaticScene from './components/StaticScene';
 import SearchPanel from './components/SearchPanel';
 import EvidencePanel from './components/EvidencePanel';
-import type { Catalogue, JourneyState, PlanetRow, Provenance, TraceabilityCatalogue } from './types';
+import WonderPanel from './components/WonderPanel';
+import JourneysPanel from './components/JourneysPanel';
+import type { Catalogue, ExperienceName, JourneyState, PlanetRow, Provenance, TraceabilityCatalogue } from './types';
 import { parseCatalogue } from './lib/catalogue';
 import { parseTraceability, validateTraceability } from './lib/traceability';
 import { DEFAULT_JOURNEY, parseJourney, updateBrowserUrl } from './lib/urlState';
@@ -21,6 +23,7 @@ export default function App() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [sceneReady, setSceneReady] = useState(false);
   const [sceneFailed, setSceneFailed] = useState(false);
+  const [journeysOpen, setJourneysOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [lowPower] = useState(() => window.innerWidth < 700 || (navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4));
@@ -77,7 +80,7 @@ export default function App() {
   useEffect(() => {
     if (catalogue && journey.planetName && !selected) {
       setToast(`“${journey.planetName}” is not in this catalogue snapshot.`);
-      navigate({ view: 'atlas', planetName: null, evidenceOpen: false }, 'replace');
+      navigate({ view: 'atlas', planetName: null, experience: 'wonder', evidenceOpen: false }, 'replace');
     }
   }, [catalogue, journey.planetName, selected, navigate]);
 
@@ -88,16 +91,22 @@ export default function App() {
   }, [toast]);
 
   function goToAtlas() {
-    navigate({ view: 'atlas', planetName: null, evidenceOpen: false, camera: DEFAULT_JOURNEY.camera });
+    navigate({ view: 'atlas', planetName: null, experience: 'wonder', evidenceOpen: false, camera: DEFAULT_JOURNEY.camera });
   }
 
   function selectPlanet(planet: PlanetRow) {
+    setJourneysOpen(false);
     navigate({ view: 'system', planetName: planet.pl_name, evidenceOpen: false, camera: DEFAULT_JOURNEY.camera });
   }
 
   function goBack() {
-    if (journey.view === 'planet') navigate({ view: 'system', evidenceOpen: false });
+    if (journey.view === 'planet') navigate({ view: 'system', experience: journey.experience === 'studio' ? 'wonder' : journey.experience, evidenceOpen: false });
     else goToAtlas();
+  }
+
+  function openExperience(experience: ExperienceName) {
+    if (experience === 'observatory') navigate({ view: 'planet', experience, evidenceOpen: true });
+    else navigate({ experience, evidenceOpen: false });
   }
 
   async function shareView() {
@@ -111,7 +120,7 @@ export default function App() {
   }
 
   return (
-    <main className={`app view-${journey.view} ${sceneReady ? 'scene-ready' : ''}`} data-view={journey.view}>
+    <main className={`app view-${journey.view} experience-${journey.experience} ${sceneReady ? 'scene-ready' : ''}`} data-view={journey.view}>
       <div className="scene-poster" aria-hidden="true"><span /><span /><span /></div>
       {catalogue && !sceneFailed && (
         <Scene
@@ -139,7 +148,7 @@ export default function App() {
           {journey.view === 'atlas' ? 'OBSERVED SKY' : journey.view === 'system' ? selected?.hostname : 'PLANET PORTRAIT'}
         </div>
         <nav className="header-actions" aria-label="View actions">
-          {selected && <button className="text-button evidence-open" onClick={() => navigate({ evidenceOpen: true })}>Evidence</button>}
+          {selected && <button className="text-button evidence-open" onClick={() => openExperience('observatory')}>Evidence</button>}
           {selected && <button className="icon-button" onClick={shareView} aria-label="Share this exact view"><Share2 size={18} /></button>}
           {provenance && <a className="source-link" href={provenance.sourceUrl} target="_blank" rel="noreferrer">NASA / TAP <ArrowUpRight size={14} /></a>}
         </nav>
@@ -171,6 +180,7 @@ export default function App() {
             <h1>The sky is full<br />of <em>places.</em></h1>
             <p>Every confirmed exoplanet.<br />One continuous journey.</p>
             <div className="catalogue-count"><strong>{catalogue.planets.length.toLocaleString('en-US')}</strong> worlds <span /> <strong>{catalogue.systems.size.toLocaleString('en-US')}</strong> systems</div>
+            <button className="journeys-open text-button" onClick={() => setJourneysOpen(true)}><BookOpen size={15} />Follow a curated journey</button>
           </section>
           <SearchPanel
             catalogue={catalogue}
@@ -188,6 +198,11 @@ export default function App() {
         <>
           <section className="world-intro">
             <button className="back-button" onClick={goBack}><ArrowLeft size={16} />{journey.view === 'planet' ? 'Back to the system' : 'Back to the observed sky'}</button>
+            <nav className="experience-nav" aria-label="Interpretation mode">
+              {(['wonder', 'observatory'] as ExperienceName[]).map((experience) => (
+                <button key={experience} className={journey.experience === experience ? 'active' : ''} aria-pressed={journey.experience === experience} onClick={() => openExperience(experience)}>{experience === 'wonder' ? 'Wonder' : 'Observatory'}</button>
+              ))}
+            </nav>
             <span className="section-label">{journey.view === 'planet' ? `${world.kindLabel} / DERIVED CLASS` : `${siblings.length} CATALOGUED ${siblings.length === 1 ? 'WORLD' : 'WORLDS'} / ${selected.hostname}`}</span>
             <h1>{journey.view === 'planet' ? selected.pl_name : selected.hostname}</h1>
             {journey.view === 'system' ? (
@@ -220,9 +235,11 @@ export default function App() {
             </>
           )}
 
+          {journey.view === 'planet' && journey.experience === 'wonder' && <WonderPanel planet={selected} onOpenEvidence={() => openExperience('observatory')} />}
+
           {journey.view === 'planet' && (
             <div className="planet-actions">
-              <button className="primary-button" onClick={() => navigate({ evidenceOpen: true })}>Inspect the evidence <ArrowRight size={18} /></button>
+              <button className="primary-button" onClick={() => openExperience('observatory')}>Inspect the evidence <ArrowRight size={18} /></button>
               <button className="text-button" onClick={shareView}><Share2 size={16} />Share this view</button>
               <span>Illustrative {world.surface === 'terrain' ? 'terrain' : 'atmosphere'} · seed {world.seed}</span>
             </div>
@@ -237,9 +254,10 @@ export default function App() {
           provenance={provenance}
           traceProvenance={traceProvenance}
           trace={traceability.byName.get(selected.pl_name) ?? null}
-          onClose={() => navigate({ evidenceOpen: false }, 'replace')}
+          onClose={() => navigate({ experience: 'wonder', evidenceOpen: false }, 'replace')}
         />
       )}
+      {catalogue && journeysOpen && <JourneysPanel catalogue={catalogue} onSelect={selectPlanet} onClose={() => setJourneysOpen(false)} />}
 
       {sceneFailed && <div className="fallback-notice" role="status">3D is unavailable. Still reconstructions are active; the full journey remains accessible.</div>}
       {toast && <div className="toast" role="status">{toast}</div>}

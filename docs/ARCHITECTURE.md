@@ -11,7 +11,10 @@ React 19 + TypeScript + Vite for the static application; Three.js and OrbitContr
 - `src/lib/evidence.ts`: measured/derived/imagined evidence records and detection labels.
 - `src/lib/traceability.ts`: strict raw/columnar companion parsing, publication-link sanitization, asymmetric uncertainty formatting, and base/companion integrity checks.
 - `src/lib/exports.ts`: exact source-record JSON/CSV generation and browser downloads; nulls and source precision are preserved.
-- `src/lib/urlState.ts`: parsing, validation, clamping, serialization, and history updates.
+- `src/lib/urlState.ts`: parsing, validation, clamping, serialization, and history updates for journey, interpretation mode, camera, and artistic state.
+- `src/lib/wonder.ts`: concise measured/derived explanations and three curated journeys whose stops resolve against the real catalogue.
+- `src/lib/useDialogFocus.ts`: shared keyboard focus containment, Escape dismissal, and trigger-focus restoration.
+- `src/components/WonderPanel.tsx` and `JourneysPanel.tsx`: novice interpretation integrated into the same selected-world journey.
 - `src/components/Scene.tsx`: one persistent renderer, class-specific procedural surface/cloud shaders, directional and relief-sensitive lighting, normalized portrait framing, outgoing-scene crossfades, interruptible camera transitions, 3D picking, resizing, disposal, and render metrics.
 - `src/components/StaticScene.tsx`: SVG/CSS fallback views using the same real data and recipes.
 - `src/App.tsx`: data loading/integrity check, journey state, navigation, sharing, responsive DOM, and fallback selection.
@@ -31,8 +34,9 @@ React 19 + TypeScript + Vite for the static application; Three.js and OrbitContr
 - `planet`: exact catalogue identifier, encoded with `URLSearchParams`.
 - `view`: `system` or `planet`; absence means atlas. A planet without a valid view opens its system.
 - `q` and `filter`: current search/filter state.
-- `evidence=1`: inspector state, only with a selected planet.
+- `mode`: `wonder`, `observatory`, or `studio`; legacy `evidence=1` opens Observatory and remains supported.
 - `az` and `el`: planet-camera azimuth/elevation in radians, clamped and rounded to three decimals.
+- `exp`, `comp`, and `crop`: clamped exposure, subject composition, and postcard crop for reproducible Studio state.
 
 Navigation pushes user journey steps; search, evidence dismissal, and camera updates replace history to avoid flooding it. Browser back/forward reparses the URL. Invalid planet names produce a notice and return to the atlas rather than fabricating a record.
 

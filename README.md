@@ -50,8 +50,9 @@ A refresh replaces the snapshot with a new full real response and refuses suspic
 - Drag the atlas or planet to orbit; scroll/pinch to travel where enabled.
 - Search by planet or host; filter by derived rocky/giant class, archive equilibrium-temperature band, transit flag, or distance.
 - Select a result or 3D target, choose a sibling world, then approach the planet.
-- Evidence separates **MEASURED** archive-reported fields, **DERIVED** app calculations, and **IMAGINED** reconstruction.
-- URLs preserve planet, view, search/filter, evidence state, and planet-camera angles. Share copies the current URL.
+- Wonder gives concise, evidence-bound explanations; three curated journeys resolve only real catalogue entries.
+- Observatory separates **MEASURED** archive-reported fields, **DERIVED** app calculations, and **IMAGINED** reconstruction, with source uncertainties, publications, raw exports, and dialog focus management.
+- URLs preserve planet, view, interpretation mode, search/filter, evidence state, and planet-camera angles. Share copies the current URL.
 - Reduced-motion, low-power rendering, static no-WebGL reconstructions, loading, empty, and retryable data-error states are included.
 
 ## Documentation
