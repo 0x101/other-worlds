@@ -1,0 +1,282 @@
+{
+  "validatedAt": "2026-11-26T06:49:18.215Z",
+  "mode": "preview",
+  "baseUrl": "http://127.0.0.1:7100",
+  "checks": [
+    {
+      "name": "local validation server starts on requested host and port",
+      "pass": true,
+      "details": "http://127.0.0.1:7100"
+    },
+    {
+      "name": "atlas renders all real systems",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "desktop atlas: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      }
+    },
+    {
+      "name": "search selects the real planetary system",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "system URL is shareable",
+      "pass": true,
+      "details": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=system&q=TRAPPIST-1+e"
+    },
+    {
+      "name": "all seven TRAPPIST-1 worlds have DOM alternatives",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "measured evidence names its NASA source fields",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "derived evidence exposes calculation",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "imagined evidence disclaims observation",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "evidence closes with Escape",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "share copies the exact current URL",
+      "pass": true,
+      "details": {
+        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=0.000&el=0.080",
+        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=0.000&el=0.080"
+      }
+    },
+    {
+      "name": "camera interaction updates useful URL state",
+      "pass": true,
+      "details": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.184&el=0.139"
+    },
+    {
+      "name": "deep link reopens the same world and camera",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "filter produces a bounded real result set",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "empty search has a working recovery state",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "empty-state recovery clears search",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "mobile atlas: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      }
+    },
+    {
+      "name": "mobile system: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      }
+    },
+    {
+      "name": "mobile planet: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      }
+    },
+    {
+      "name": "mobile uses a non-terrain atmospheric treatment for K2-18 b",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "mobile back navigation stays above the portrait metadata",
+      "pass": true,
+      "details": {
+        "top": 82,
+        "position": "fixed"
+      }
+    },
+    {
+      "name": "primary mobile action meets 44px touch target",
+      "pass": true,
+      "details": {
+        "width": 335,
+        "height": 52
+      }
+    },
+    {
+      "name": "mobile evidence: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      }
+    },
+    {
+      "name": "768px atlas: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 768,
+        "scrollWidth": 768,
+        "height": 900,
+        "scrollHeight": 900
+      }
+    },
+    {
+      "name": "768px search remains usable",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "1024px atlas: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 900,
+        "scrollHeight": 900
+      }
+    },
+    {
+      "name": "1024px search remains usable",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "gas giant receives bands, never solid terrain",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "reduced-motion removes CSS animation",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no-WebGL fallback renders a still reconstruction",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "fallback explains the active rendering mode",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "fallback retains evidence inspection",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "catalogue failure shows an explicit error state",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "data-error retry recovers the complete atlas",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "zero uncaught page errors",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "zero console errors in normal journeys",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "zero failed HTTP responses",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "local validation server and descendants stopped",
+      "pass": true,
+      "details": null
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedResponses": [],
+  "performance": {
+    "atlas": {
+      "ready": true,
+      "view": "atlas",
+      "planet": null,
+      "fps": 44,
+      "drawCalls": 6,
+      "triangles": 2,
+      "systems": 4865,
+      "planets": 6473,
+      "resources": 9,
+      "transferBytes": 943300
+    },
+    "planet": {
+      "ready": true,
+      "view": "planet",
+      "planet": "TRAPPIST-1 e",
+      "fps": 22,
+      "drawCalls": 4,
+      "triangles": 26498,
+      "systems": 4865,
+      "planets": 6473
+    }
+  },
+  "screenshots": [
+    "desktop-atlas.png",
+    "desktop-evidence.png",
+    "desktop-gas-giant-reduced-motion.png",
+    "desktop-planet.png",
+    "desktop-static-fallback.png",
+    "desktop-system.png",
+    "mobile-atlas.png",
+    "mobile-evidence.png",
+    "mobile-planet.png",
+    "responsive-1024-atlas.png",
+    "responsive-768-atlas.png"
+  ],
+  "passed": true
+}
