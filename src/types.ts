@@ -1,4 +1,4 @@
-export type ViewName = 'atlas' | 'system' | 'planet';
+export type ViewName = 'earth' | 'solar' | 'neighbourhood' | 'atlas' | 'system' | 'planet' | 'lookback';
 export type FilterName = 'all' | 'rocky' | 'giants' | 'temperate' | 'transiting' | 'nearby';
 
 export interface PlanetRow {
@@ -102,10 +102,12 @@ export interface CameraViewState {
 
 export type ExperienceName = 'wonder' | 'observatory';
 export type ShareTemplate = 'portrait' | 'field-note' | 'orbital-study';
+export type JourneyOrigin = 'atlas' | 'neighbourhood';
 
 export interface JourneyState {
   view: ViewName;
   planetName: string | null;
+  origin: JourneyOrigin;
   filter: FilterName;
   query: string;
   experience: ExperienceName;

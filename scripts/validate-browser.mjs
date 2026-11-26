@@ -94,6 +94,47 @@ try {
   const page = await desktop.newPage();
   watch(page, 'desktop');
   await page.goto(base, { waitUntil: 'networkidle' });
+  await ready(page, 'earth');
+  check('cold start opens Earth with a You Are Here frame', await page.locator('.earth-copy').isVisible() && await page.getByText(/You are here \/ Earth/i).isVisible());
+  await noOverflow(page, 'desktop Earth');
+  await shot(page, 'desktop-earth');
+  performance.earth = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__, resources: performance.getEntriesByType('resource').length, transferBytes: performance.getEntriesByType('resource').reduce((sum, entry) => sum + (entry.transferSize || 0), 0) }));
+
+  await page.getByRole('button', { name: 'Leave Earth' }).click();
+  await ready(page, 'solar');
+  check('Solar System uses eight modelled planets at a fixed explicit epoch', await page.locator('.solar-worlds li').count() === 8 && await page.locator('.solar-copy time').getAttribute('datetime') === '2026-11-26T00:00:00.000Z');
+  await noOverflow(page, 'desktop Solar System');
+  await shot(page, 'desktop-solar');
+  performance.solar = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__ }));
+
+  await page.getByRole('button', { name: 'Travel to nearby suns' }).click();
+  await ready(page, 'neighbourhood');
+  check('interim neighbourhood is explicitly archive geometry rather than Gaia', await page.getByText('Archive-reported direction and distance · logarithmic display · Gaia layer not yet integrated', { exact: true }).isVisible());
+  await shot(page, 'desktop-neighbourhood');
+  performance.neighbourhood = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__ }));
+
+  await page.getByRole('button', { name: 'Plot course for TRAPPIST-1' }).click();
+  await ready(page, 'system');
+  check('golden path arrives at the real TRAPPIST-1 system', await page.evaluate(() => window.__OTHER_WORLDS__?.planet === 'TRAPPIST-1 e'));
+  check('golden-path system back action returns to nearby suns', await page.getByRole('button', { name: 'Back to nearby suns' }).isVisible());
+  await page.getByRole('button', { name: 'Approach TRAPPIST-1 e' }).click();
+  await ready(page, 'planet');
+  await page.getByRole('button', { name: 'Look back toward home' }).click();
+  await ready(page, 'lookback');
+  check('look-back preserves the selected host and exact route state', page.url().includes('planet=TRAPPIST-1+e') && page.url().includes('view=lookback') && await page.locator('.home-marker').isVisible());
+  check('look-back discloses a schematic rather than observed view', await page.getByText('Schematic look-back · archive direction · distance compressed · not an observed view', { exact: true }).isVisible());
+  await shot(page, 'desktop-lookback');
+  performance.lookback = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__ }));
+
+  await page.getByRole('button', { name: 'Resume TRAPPIST-1 e' }).click();
+  await ready(page, 'planet');
+  check('resume returns to the same world portrait', await page.evaluate(() => window.__OTHER_WORLDS__?.planet === 'TRAPPIST-1 e'));
+  await page.getByRole('button', { name: 'Look back toward home' }).click();
+  await ready(page, 'lookback');
+  await page.getByRole('button', { name: 'Return to Earth', exact: true }).click();
+  await ready(page, 'earth');
+  check('return home clears the remote destination without reloading the renderer', await page.evaluate(() => window.__OTHER_WORLDS__?.planet === null));
+  await page.getByRole('button', { name: 'Explore the exoplanet atlas' }).click();
   await ready(page, 'atlas');
   check('atlas renders all real systems', await page.evaluate(() => window.__OTHER_WORLDS__?.systems === 4865 && window.__OTHER_WORLDS__?.planets === 6473));
   await noOverflow(page, 'desktop atlas');
@@ -220,7 +261,10 @@ try {
   await page.getByRole('button', { name: 'Back to the system' }).click();
   await ready(page, 'system');
   check('system view contains a seven-world orbital fingerprint', await page.locator('.orbital-fingerprint svg').isVisible() && await page.locator('.orbital-fingerprint [data-planet]').count() === 7);
-  await page.getByRole('button', { name: 'Back to the observed sky' }).click();
+  await page.getByRole('button', { name: 'Back to nearby suns' }).click();
+  await ready(page, 'neighbourhood');
+  check('originless legacy world links return to the golden journey', page.url().includes('view=neighbourhood'));
+  await page.getByRole('button', { name: 'Open the full exoplanet atlas' }).click();
   await ready(page, 'atlas');
   await page.getByRole('button', { name: 'Rocky', exact: true }).click();
   check('filter produces a bounded real result set', await page.locator('.search-results li').count() > 0);
@@ -234,6 +278,11 @@ try {
   const phone = await mobile.newPage();
   watch(phone, 'mobile');
   await phone.goto(base, { waitUntil: 'networkidle' });
+  await ready(phone, 'earth');
+  await noOverflow(phone, 'mobile Earth');
+  check('mobile opens on Earth with its primary departure action', await phone.getByRole('button', { name: 'Leave Earth' }).isVisible());
+  await shot(phone, 'mobile-earth');
+  await phone.getByRole('button', { name: 'Explore the exoplanet atlas' }).click();
   await ready(phone, 'atlas');
   await noOverflow(phone, 'mobile atlas');
   await shot(phone, 'mobile-atlas');
@@ -250,6 +299,15 @@ try {
   check('mobile back navigation stays above the portrait metadata', backPosition.position === 'fixed' && backPosition.top >= 70 && backPosition.top < 150, backPosition);
   const touchTarget = await phone.getByRole('button', { name: 'Inspect the evidence' }).evaluate((element) => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height }));
   check('primary mobile action meets 44px touch target', touchTarget.height >= 44 && touchTarget.width >= 44, touchTarget);
+  check('mobile preserves look-back and Share actions', await phone.getByRole('button', { name: 'Look back toward home' }).isVisible() && await phone.locator('.planet-actions').getByRole('button', { name: 'Share this world' }).isVisible());
+  const mobileActionGeometry = await phone.evaluate(() => {
+    const box = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
+    };
+    return { guide: box('.wonder-panel'), secondary: box('.planet-secondary-actions'), primary: box('.planet-actions > .primary-button') };
+  });
+  check('mobile secondary actions do not overlap the field guide or primary action', mobileActionGeometry.secondary.top >= mobileActionGeometry.guide.bottom && mobileActionGeometry.primary.top >= mobileActionGeometry.secondary.bottom && mobileActionGeometry.secondary.left >= 0 && mobileActionGeometry.secondary.right <= 375, mobileActionGeometry);
   await phone.locator('.planet-actions').getByRole('button', { name: 'Share this world' }).click();
   await phone.locator('.share-preview[data-template="portrait"] img').waitFor({ timeout: 45_000 });
   await noOverflow(phone, 'mobile Share');
@@ -270,7 +328,7 @@ try {
     const responsive = await browser.newContext({ viewport: { width, height: 900 } });
     const responsivePage = await responsive.newPage();
     watch(responsivePage, `responsive-${width}`);
-    await responsivePage.goto(base, { waitUntil: 'networkidle' });
+    await responsivePage.goto(`${base}/?view=atlas`, { waitUntil: 'networkidle' });
     await ready(responsivePage, 'atlas');
     await noOverflow(responsivePage, `${width}px atlas`);
     check(`${width}px search remains usable`, await responsivePage.getByLabel('Search planets or host stars').isVisible());
@@ -281,6 +339,12 @@ try {
   const reduced = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
   const quiet = await reduced.newPage();
   watch(quiet, 'reduced-motion');
+  await quiet.goto(base, { waitUntil: 'networkidle' });
+  await ready(quiet, 'earth');
+  await quiet.getByRole('button', { name: 'Leave Earth' }).click();
+  await ready(quiet, 'solar');
+  check('reduced-motion disables the journey transition', await quiet.locator('.journey-wipe').evaluate((element) => getComputedStyle(element).display === 'none'));
+  await shot(quiet, 'desktop-solar-reduced-motion');
   await quiet.goto(`${base}/?planet=HD+189733+b&view=planet&az=0&el=0.08`, { waitUntil: 'networkidle' });
   await ready(quiet, 'planet');
   check('gas giant receives bands, never solid terrain', await quiet.getByText(/Illustrative atmosphere · seed/).isVisible());
@@ -307,8 +371,15 @@ try {
   });
   const fallbackPage = await fallbackContext.newPage();
   watch(fallbackPage, 'no-webgl');
+  await fallbackPage.goto(base, { waitUntil: 'networkidle' });
+  await fallbackPage.locator('.static-earth').waitFor();
+  check('no-WebGL cold start renders a still Earth', await fallbackPage.locator('.app').getAttribute('data-view') === 'earth' && await fallbackPage.locator('.static-earth').isVisible());
+  await shot(fallbackPage, 'desktop-static-earth');
+  await fallbackPage.getByRole('button', { name: 'Leave Earth' }).click();
+  await fallbackPage.locator('.static-solar').waitFor();
+  check('no-WebGL journey reaches the Solar System', await fallbackPage.locator('.app').getAttribute('data-view') === 'solar' && await fallbackPage.locator('.static-solar').isVisible());
   await fallbackPage.goto(`${base}/?planet=TRAPPIST-1+e&view=planet&az=0&el=0.08`, { waitUntil: 'networkidle' });
-  await fallbackPage.getByTestId('static-scene').waitFor();
+  await fallbackPage.locator('.static-planet').waitFor();
   check('no-WebGL fallback renders a still reconstruction', await fallbackPage.getByTestId('static-scene').isVisible());
   check('fallback explains the active rendering mode', await fallbackPage.getByText(/3D is unavailable/).isVisible());
   await fallbackPage.getByRole('button', { name: 'Inspect the evidence' }).click();
@@ -333,8 +404,8 @@ try {
   check('catalogue failure shows an explicit error state', await errorPage.getByText('The atlas could not be opened.').isVisible());
   await errorPage.unroute('**/data/pscomppars.json');
   await errorPage.getByRole('button', { name: 'Try the snapshot again' }).click();
-  await ready(errorPage, 'atlas');
-  check('data-error retry recovers the complete atlas', await errorPage.evaluate(() => window.__OTHER_WORLDS__?.planets === 6473));
+  await ready(errorPage, 'earth');
+  check('data-error retry recovers the complete snapshot on Earth', await errorPage.evaluate(() => window.__OTHER_WORLDS__?.planets === 6473));
   await errorContext.close();
 
   check('zero uncaught page errors', pageErrors.length === 0, pageErrors);

@@ -56,4 +56,23 @@ import { DEFAULT_JOURNEY, journeySearch, parseJourney } from './urlState';
     expect(parsed.evidenceOpen).toBe(false);
     expect(parsed.shareTemplate).toBe('field-note');
   });
+
+  it('opens at Earth and exposes Explore without turning it into the default destination', () => {
+    expect(parseJourney('')).toEqual(DEFAULT_JOURNEY);
+    expect(parseJourney('?view=atlas')).toMatchObject({ view: 'atlas', planetName: null });
+    expect(journeySearch(parseJourney('?view=atlas'))).toBe('?view=atlas');
+    expect(parseJourney('?view=lookback')).toMatchObject({ view: 'earth', planetName: null });
+  });
+
+  it('round-trips golden-path stops, look-back selection, and the route origin', () => {
+    for (const view of ['solar', 'neighbourhood'] as const) {
+      expect(parseJourney(journeySearch({ ...DEFAULT_JOURNEY, view }))).toEqual({ ...DEFAULT_JOURNEY, view });
+    }
+    const lookback = { ...DEFAULT_JOURNEY, view: 'lookback' as const, planetName: 'TRAPPIST-1 e' };
+    expect(parseJourney(journeySearch(lookback))).toEqual(lookback);
+    expect(journeySearch(lookback)).toContain('view=lookback');
+    const fromAtlas = { ...lookback, view: 'system' as const, origin: 'atlas' as const };
+    expect(parseJourney(journeySearch(fromAtlas))).toEqual(fromAtlas);
+    expect(journeySearch(fromAtlas)).toContain('from=atlas');
+  });
 });

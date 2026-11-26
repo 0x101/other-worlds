@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-26T16:58:17.202Z",
+  "validatedAt": "2026-11-26T20:49:37.769Z",
   "mode": "preview",
   "baseUrl": "http://127.0.0.1:7100",
   "checks": [
@@ -7,6 +7,71 @@
       "name": "local validation server starts on requested host and port",
       "pass": true,
       "details": "http://127.0.0.1:7100"
+    },
+    {
+      "name": "cold start opens Earth with a You Are Here frame",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "desktop Earth: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      }
+    },
+    {
+      "name": "Solar System uses eight modelled planets at a fixed explicit epoch",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "desktop Solar System: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      }
+    },
+    {
+      "name": "interim neighbourhood is explicitly archive geometry rather than Gaia",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "golden path arrives at the real TRAPPIST-1 system",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "golden-path system back action returns to nearby suns",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "look-back preserves the selected host and exact route state",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "look-back discloses a schematic rather than observed view",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "resume returns to the same world portrait",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "return home clears the remote destination without reloading the renderer",
+      "pass": true,
+      "details": null
     },
     {
       "name": "atlas renders all real systems",
@@ -46,7 +111,7 @@
     {
       "name": "system URL is shareable",
       "pass": true,
-      "details": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=system&q=TRAPPIST-1+e"
+      "details": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=system&from=atlas&q=TRAPPIST-1+e"
     },
     {
       "name": "all seven TRAPPIST-1 worlds have DOM alternatives",
@@ -96,7 +161,7 @@
     {
       "name": "direct camera manipulation remains on the world canvas and updates URL state",
       "pass": true,
-      "details": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121"
+      "details": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&from=atlas&q=TRAPPIST-1+e&az=-0.116&el=0.121"
     },
     {
       "name": "deep link reopens the same world and camera",
@@ -127,15 +192,15 @@
       "name": "portrait: copy exact link preserves world, camera, and template",
       "pass": true,
       "details": {
-        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=portrait",
-        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=portrait"
+        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&from=atlas&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=portrait",
+        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&from=atlas&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=portrait"
       }
     },
     {
       "name": "portrait: actual high-resolution PNG download has correct dimensions and content",
       "pass": true,
       "details": {
-        "bytes": 2747339,
+        "bytes": 2748575,
         "filename": "trappist-1-e-portrait.png",
         "width": 1800,
         "height": 2250
@@ -145,15 +210,15 @@
       "name": "field-note: copy exact link preserves world, camera, and template",
       "pass": true,
       "details": {
-        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=field-note",
-        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=field-note"
+        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&from=atlas&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=field-note",
+        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&from=atlas&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=field-note"
       }
     },
     {
       "name": "field-note: actual high-resolution PNG download has correct dimensions and content",
       "pass": true,
       "details": {
-        "bytes": 1122016,
+        "bytes": 1123616,
         "filename": "trappist-1-e-field-note.png",
         "width": 2400,
         "height": 1800
@@ -163,15 +228,15 @@
       "name": "orbital-study: copy exact link preserves world, camera, and template",
       "pass": true,
       "details": {
-        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=orbital-study",
-        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=orbital-study"
+        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&from=atlas&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=orbital-study",
+        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&from=atlas&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=orbital-study"
       }
     },
     {
       "name": "orbital-study: actual high-resolution PNG download has correct dimensions and content",
       "pass": true,
       "details": {
-        "bytes": 543156,
+        "bytes": 544824,
         "filename": "trappist-1-e-orbital-study.png",
         "width": 2200,
         "height": 2200
@@ -181,8 +246,8 @@
       "name": "Share closes with Escape back to the same world and camera",
       "pass": true,
       "details": {
-        "before": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121",
-        "after": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121"
+        "before": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&from=atlas&q=TRAPPIST-1+e&az=-0.116&el=0.121",
+        "after": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&from=atlas&q=TRAPPIST-1+e&az=-0.116&el=0.121"
       }
     },
     {
@@ -211,6 +276,11 @@
       "details": null
     },
     {
+      "name": "originless legacy world links return to the golden journey",
+      "pass": true,
+      "details": null
+    },
+    {
       "name": "filter produces a bounded real result set",
       "pass": true,
       "details": null
@@ -222,6 +292,21 @@
     },
     {
       "name": "empty-state recovery clears search",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "mobile Earth: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      }
+    },
+    {
+      "name": "mobile opens on Earth with its primary departure action",
       "pass": true,
       "details": null
     },
@@ -274,6 +359,35 @@
       "details": {
         "width": 335,
         "height": 52
+      }
+    },
+    {
+      "name": "mobile preserves look-back and Share actions",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "mobile secondary actions do not overlap the field guide or primary action",
+      "pass": true,
+      "details": {
+        "guide": {
+          "top": 449,
+          "bottom": 654,
+          "left": 20,
+          "right": 355
+        },
+        "secondary": {
+          "top": 666,
+          "bottom": 710,
+          "left": 20,
+          "right": 355
+        },
+        "primary": {
+          "top": 717.609375,
+          "bottom": 769.609375,
+          "left": 20,
+          "right": 355
+        }
       }
     },
     {
@@ -337,6 +451,11 @@
       "details": null
     },
     {
+      "name": "reduced-motion disables the journey transition",
+      "pass": true,
+      "details": null
+    },
+    {
       "name": "gas giant receives bands, never solid terrain",
       "pass": true,
       "details": null
@@ -357,6 +476,16 @@
       "details": {
         "bytes": 1176968
       }
+    },
+    {
+      "name": "no-WebGL cold start renders a still Earth",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no-WebGL journey reaches the Solar System",
+      "pass": true,
+      "details": null
     },
     {
       "name": "no-WebGL fallback renders a still reconstruction",
@@ -386,7 +515,7 @@
       "details": null
     },
     {
-      "name": "data-error retry recovers the complete atlas",
+      "name": "data-error retry recovers the complete snapshot on Earth",
       "pass": true,
       "details": null
     },
@@ -415,24 +544,66 @@
   "pageErrors": [],
   "failedResponses": [],
   "performance": {
+    "earth": {
+      "ready": true,
+      "view": "earth",
+      "planet": null,
+      "fps": 31,
+      "drawCalls": 2,
+      "triangles": 20896,
+      "systems": 4865,
+      "planets": 6473,
+      "resources": 12,
+      "transferBytes": 2221955
+    },
+    "solar": {
+      "ready": true,
+      "view": "solar",
+      "planet": null,
+      "fps": 34,
+      "drawCalls": 19,
+      "triangles": 14754,
+      "systems": 4865,
+      "planets": 6473
+    },
+    "neighbourhood": {
+      "ready": true,
+      "view": "neighbourhood",
+      "planet": null,
+      "fps": 58,
+      "drawCalls": 2,
+      "triangles": 2,
+      "systems": 4865,
+      "planets": 6473
+    },
+    "lookback": {
+      "ready": true,
+      "view": "lookback",
+      "planet": "TRAPPIST-1 e",
+      "fps": 60,
+      "drawCalls": 3,
+      "triangles": 722,
+      "systems": 4865,
+      "planets": 6473
+    },
     "atlas": {
       "ready": true,
       "view": "atlas",
       "planet": null,
-      "fps": 35,
-      "drawCalls": 7,
+      "fps": 60,
+      "drawCalls": 6,
       "triangles": 2,
       "systems": 4865,
       "planets": 6473,
-      "resources": 11,
-      "transferBytes": 1701985
+      "resources": 13,
+      "transferBytes": 2222255
     },
     "planet": {
       "ready": true,
       "view": "planet",
       "planet": "TRAPPIST-1 e",
-      "fps": 22,
-      "drawCalls": 5,
+      "fps": 26,
+      "drawCalls": 4,
       "triangles": 26498,
       "systems": 4865,
       "planets": 6473
@@ -440,17 +611,24 @@
   },
   "screenshots": [
     "desktop-atlas.png",
+    "desktop-earth.png",
     "desktop-evidence.png",
     "desktop-gas-giant-reduced-motion.png",
     "desktop-journeys.png",
+    "desktop-lookback.png",
+    "desktop-neighbourhood.png",
     "desktop-planet.png",
     "desktop-share-field-note.png",
     "desktop-share-orbital-study.png",
     "desktop-share-portrait.png",
+    "desktop-solar-reduced-motion.png",
+    "desktop-solar.png",
+    "desktop-static-earth.png",
     "desktop-static-fallback.png",
     "desktop-static-share.png",
     "desktop-system.png",
     "mobile-atlas.png",
+    "mobile-earth.png",
     "mobile-evidence.png",
     "mobile-planet.png",
     "mobile-share.png",

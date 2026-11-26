@@ -3,7 +3,7 @@
 interface Window {
   __OTHER_WORLDS__?: {
     ready: boolean;
-    view: 'atlas' | 'system' | 'planet';
+    view: import('./types').ViewName;
     planet: string | null;
     fps: number;
     drawCalls: number;

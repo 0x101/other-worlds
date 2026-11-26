@@ -12,6 +12,7 @@
     "data:fetch": "node scripts/fetch-catalogue.mjs",
     "data:fetch:traceability": "node scripts/fetch-traceability.mjs",
     "data:validate": "node scripts/validate-data.mjs",
+    "data:solar": "node scripts/build-solar-snapshot.mjs",
     "validate:browser": "node scripts/validate-browser.mjs"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.187.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "astronomy-engine": "^2.1.19",
     "jsdom": "^31.0.1",
     "typescript": "^7.0.2",
     "vite": "^7.2.2",

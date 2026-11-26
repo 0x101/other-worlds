@@ -2,21 +2,25 @@
 
 ## Direction
 
-A quiet deep-space observatory with editorial typography. The interface frames the scene instead of turning it into a card grid.
+A quiet deep-space observatory with editorial typography. The interface frames one continuous Earth-to-home journey instead of turning it into a card grid or leading with catalogue statistics.
 
-- **Type:** Instrument Serif for world names and the opening statement; Manrope for controls, measurements, and provenance. Both are self-hosted open fonts.
+- **Type:** Instrument Serif for place names and narrative statements; Manrope for controls, measurements, and provenance. Both are self-hosted open fonts.
 - **Color:** tinted near-black green, warm off-white, restrained sage, and a small sand/amber accent. OKLCH primitive tokens feed semantic surface, text, accent, and line tokens.
-- **Composition:** asymmetric editorial copy on the left; the atlas, orrery, or planet carries the visual center. Controls sit at the edges and recede during inspection.
-- **Signature detail:** the warm orbital mark and fine orbit lines connect the brand, atlas, system, and portrait without illustration assets.
+- **Composition:** asymmetric editorial copy on the left; Earth, the Solar System, nearby hosts, an orrery, or a planet carries the visual center. Controls sit at the edges and recede during inspection. Mobile reflows the same scenes rather than replacing them with separate demos.
+- **Signature detail:** the warm orbital mark and fine orbit lines connect the brand, atlas, system, portrait, and return-home marker. The opening Earth's real composite texture distinguishes home from imagined exoplanet surfaces.
 
 ## Scene language
 
+- Earth opens the experience with an unmistakable You Are Here frame and a locally bundled NASA Blue Marble composite, explicitly not live clouds.
+- The Solar System uses eight modelled positions at one explicit instant. The planets, enlarged glyphs, logarithmic distance rings, and Earth marker form a readable family portrait without pretending to be a to-scale orrery.
+- The interim neighbourhood contains real exoplanet-host directions only. It is labeled as a NASA archive subset, not Gaia or a complete stellar census.
 - Atlas points represent real host systems, not random catalogue entries. RA/Dec and logarithmically compressed distance inform positions when present.
-- The system is an orrery with eccentricity-influenced ellipses, deterministic phases, and a highlighted selected world. Distances and body sizes are intentionally compressed.
+- The exoplanet system is an orrery with eccentricity-influenced ellipses, deterministic phases, and a highlighted selected world. Distances and body sizes are intentionally compressed.
 - Planet portraits use function-generated shader noise. Gas and ice giants use warped atmospheric bands and deterministic storm systems; sub-Neptune worlds use layered cloud decks and currents; unresolved worlds use a restrained cloud veil; only rocky worlds receive terrain-like color relief. Hot rocky worlds may include explicitly illustrative emissive fractures.
-- An atmosphere rim, directional terminator, relief-sensitive lighting, stellar color, and restrained glow provide depth. No external planet artwork or logos are used.
-- Atlas cores are compact, with a separate low-opacity halo for multi-planet systems. Atlas, system, and portrait share the same persistent starfield and scene lifecycle.
-- A CSS composition remains behind the canvas so startup or WebGL failure never leaves a black rectangle.
+- An atmosphere rim, directional terminator, relief-sensitive lighting, stellar color, and restrained glow provide depth. No external exoplanet artwork or logos are used.
+- Atlas cores are compact, with a separate low-opacity halo for multi-planet systems. Every stop shares one renderer and scene lifecycle. Decorative random starfields were removed so they cannot be mistaken for catalogue stars.
+- Look-back faces the Sun from the selected host's archive direction. Earth remains unresolved; the quiet home marker and schematic disclosure carry the emotional return without fabricating an observed image.
+- A CSS composition remains behind the canvas, and complete static journey scenes prevent WebGL failure from leaving a black rectangle.
 
 ## Rendered iteration record
 

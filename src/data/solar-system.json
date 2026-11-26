@@ -1,0 +1,131 @@
+{
+  "schema": "other-worlds/solar-system-snapshot-v1",
+  "epoch": "2026-11-26T00:00:00.000Z",
+  "origin": "Sun centre",
+  "frame": "EQJ — J2000 mean equator",
+  "units": "au",
+  "status": "DERIVED",
+  "source": {
+    "name": "Astronomy Engine",
+    "version": "2.1.19",
+    "license": "MIT",
+    "url": "https://github.com/cosinekitty/astronomy/tree/master/source/js",
+    "method": "HelioVector for each planet centre; geometric heliocentric position without light-time or aberration correction."
+  },
+  "transformation": "RotateVector(Rotation_EQJ_ECL()) supplies display-only ECL/J2000 coordinates. The original EQJ/J2000 vectors are retained.",
+  "generatedAt": "2026-11-26T19:35:42.547Z",
+  "bodies": [
+    {
+      "name": "Mercury",
+      "heliocentricAu": 0.367085172344,
+      "eqjAu": [
+        -0.352288506948,
+        0.071286831222,
+        0.074582298984
+      ],
+      "eclipticAu": [
+        -0.352288506948,
+        0.095071515521,
+        0.040071667846
+      ]
+    },
+    {
+      "name": "Venus",
+      "heliocentricAu": 0.720077512121,
+      "eqjAu": [
+        0.086193769314,
+        0.653962484609,
+        0.288817115696
+      ],
+      "eclipticAu": [
+        0.086193769314,
+        0.714883698772,
+        0.004853331225
+      ]
+    },
+    {
+      "name": "Earth",
+      "heliocentricAu": 0.987027178798,
+      "eqjAu": [
+        0.442593236421,
+        0.809455137045,
+        0.350879266803
+      ],
+      "eclipticAu": [
+        0.442593236421,
+        0.882232325124,
+        -0.000057149378
+      ]
+    },
+    {
+      "name": "Mars",
+      "heliocentricAu": 1.61926755007,
+      "eqjAu": [
+        -0.610234802075,
+        1.35700623771,
+        0.638885714242
+      ],
+      "eclipticAu": [
+        -0.610234802075,
+        1.499163014147,
+        0.04638040598
+      ]
+    },
+    {
+      "name": "Jupiter",
+      "heliocentricAu": 5.324846602607,
+      "eqjAu": [
+        -3.802844644786,
+        3.391419387202,
+        1.546168971693
+      ],
+      "eclipticAu": [
+        -3.802844644786,
+        3.726597134699,
+        0.069553896876
+      ]
+    },
+    {
+      "name": "Saturn",
+      "heliocentricAu": 9.417610406364,
+      "eqjAu": [
+        9.178235142208,
+        2.060018323289,
+        0.455752068668
+      ],
+      "eclipticAu": [
+        9.178235142208,
+        2.071317702548,
+        -0.401283460277
+      ]
+    },
+    {
+      "name": "Uranus",
+      "heliocentricAu": 19.430919747357,
+      "eqjAu": [
+        8.732556295351,
+        15.944853928259,
+        6.860374332589
+      ],
+      "eclipticAu": [
+        8.732556295351,
+        17.358017661956,
+        -0.048224723553
+      ]
+    },
+    {
+      "name": "Neptune",
+      "heliocentricAu": 29.877300068273,
+      "eqjAu": [
+        29.82798991743,
+        1.715388844706,
+        -0.038961093602
+      ],
+      "eclipticAu": [
+        29.82798991743,
+        1.558340807708,
+        -0.718088283144
+      ]
+    }
+  ]
+}

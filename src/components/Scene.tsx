@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { CameraViewState, Catalogue, PlanetRow, ViewName } from '../types';
 import { displayOrbit, generateWorld, seededRandom } from '../lib/world';
 import { hashString, skyPosition } from '../lib/catalogue';
+import { hostColor, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
 
 interface SceneProps {
   catalogue: Catalogue;
@@ -207,7 +208,10 @@ function disposeGroup(group: THREE.Group): void {
     }
   });
   geometries.forEach((geometry) => geometry.dispose());
-  materials.forEach((material) => material.dispose());
+  materials.forEach((material) => {
+    (material.userData.ownedTexture as THREE.Texture | undefined)?.dispose();
+    material.dispose();
+  });
   group.clear();
 }
 
@@ -218,7 +222,7 @@ class WorldEngine {
   private controls: OrbitControls;
   private content = new THREE.Group();
   private departing: { group: THREE.Group; started: number }[] = [];
-  private currentView: ViewName = 'atlas';
+  private currentView: ViewName = 'earth';
   private currentPlanet: PlanetRow | null = null;
   private catalogue: Catalogue;
   private callbacks: EngineCallbacks;
@@ -261,9 +265,8 @@ class WorldEngine {
     this.controls.zoomSpeed = 0.65;
     this.controls.addEventListener('start', () => { this.transition = null; });
     this.controls.addEventListener('end', () => this.emitCamera());
-    this.camera.position.set(0, 7, 44);
+    this.camera.position.set(0, 0.45, 7.8);
     this.controls.target.set(0, 0, 0);
-    this.buildStarfield();
     this.bindPointer();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(container);
@@ -284,10 +287,10 @@ class WorldEngine {
       const bounds = this.renderer.domElement.getBoundingClientRect();
       this.pointer.set(((event.clientX - bounds.left) / bounds.width) * 2 - 1, -((event.clientY - bounds.top) / bounds.height) * 2 + 1);
       this.raycaster.setFromCamera(this.pointer, this.camera);
-      this.raycaster.params.Points.threshold = this.currentView === 'atlas' ? 0.55 : 0.2;
+      this.raycaster.params.Points.threshold = this.currentView === 'atlas' ? 0.55 : this.currentView === 'neighbourhood' ? 0.45 : 0.2;
       const intersections = this.raycaster.intersectObjects(this.content.children, true);
       for (const intersection of intersections) {
-        if (intersection.object instanceof THREE.Points && intersection.index !== undefined && this.currentView === 'atlas') {
+        if (intersection.object instanceof THREE.Points && intersection.index !== undefined && (this.currentView === 'atlas' || this.currentView === 'neighbourhood')) {
           const names = intersection.object.userData.systems as string[];
           const host = names[intersection.index];
           const planet = host ? this.catalogue.systems.get(host)?.[0] : undefined;
@@ -302,23 +305,114 @@ class WorldEngine {
     });
   }
 
-  private buildStarfield(): void {
-    const random = seededRandom(48151623);
-    const count = this.lowPower ? 650 : 1500;
-    const positions = new Float32Array(count * 3);
-    for (let index = 0; index < count; index += 1) {
-      const radius = 65 + random() * 110;
-      const theta = random() * Math.PI * 2;
-      const phi = Math.acos(2 * random() - 1);
-      positions[index * 3] = radius * Math.sin(phi) * Math.cos(theta);
-      positions[index * 3 + 1] = radius * Math.cos(phi);
-      positions[index * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+  private buildEarth(): void {
+    const centerX = this.container.clientWidth < 700 ? 0 : 1.05;
+    const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0 });
+    const texture = new THREE.TextureLoader().load(
+      `${import.meta.env.BASE_URL}textures/earth-blue-marble.jpg`,
+      () => { material.needsUpdate = true; },
+      undefined,
+      () => { material.map = null; material.color.set(0x416d78); material.needsUpdate = true; },
+    );
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+    material.map = texture;
+    material.userData.ownedTexture = texture;
+    const globe = new THREE.Mesh(new THREE.SphereGeometry(2, this.lowPower ? 64 : 96, this.lowPower ? 48 : 64), material);
+    globe.name = 'earth-globe';
+    globe.position.x = centerX;
+    globe.rotation.y = -Math.PI / 2;
+    this.content.add(globe);
+    const atmosphere = new THREE.Mesh(
+      new THREE.SphereGeometry(2.055, this.lowPower ? 48 : 80, this.lowPower ? 32 : 56),
+      new THREE.ShaderMaterial({
+        vertexShader: atmosphereVertex,
+        fragmentShader: atmosphereFragment,
+        uniforms: {
+          uColor: { value: new THREE.Color(0x76b7d0) },
+          uStrength: { value: 0.34 },
+          uLightDirection: { value: new THREE.Vector3(-0.7, 0.38, 0.85).normalize() },
+        },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    atmosphere.name = 'earth-atmosphere';
+    atmosphere.position.x = centerX;
+    this.content.add(atmosphere);
+    this.content.add(new THREE.AmbientLight(0x9db5b4, 0.28));
+    const sunlight = new THREE.DirectionalLight(0xfff1da, 3.2);
+    sunlight.position.set(-4, 2.5, 5);
+    this.content.add(sunlight);
+  }
+
+  private buildSolar(): void {
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(1.05, 48, 32), new THREE.MeshBasicMaterial({ color: 0xe7c28d }));
+    this.content.add(sun);
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.spriteTexture, color: 0xe7c28d, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending }));
+    glow.scale.setScalar(8);
+    this.content.add(glow);
+    this.content.add(new THREE.AmbientLight(0x91a49c, 0.3));
+    this.content.add(new THREE.PointLight(0xffe0ae, 240, 120, 1.4));
+    for (const body of solarDisplayBodies()) {
+      const ring = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(new THREE.EllipseCurve(0, 0, body.displayRadius, body.displayRadius, 0, Math.PI * 2).getPoints(180).map((point) => new THREE.Vector3(point.x, 0, point.y))),
+        new THREE.LineBasicMaterial({ color: body.name === 'Earth' ? 0xc3b18e : 0x75847c, transparent: true, opacity: body.name === 'Earth' ? 0.2 : 0.075 }),
+      );
+      this.content.add(ring);
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(body.radius, this.lowPower ? 20 : 32, this.lowPower ? 14 : 22),
+        new THREE.MeshStandardMaterial({ color: body.color, roughness: 0.88, metalness: 0.01 }),
+      );
+      mesh.name = `solar-${body.name.toLowerCase()}`;
+      mesh.position.set(body.position.x, body.position.y, body.position.z);
+      this.content.add(mesh);
+      if (body.name === 'Earth') {
+        const marker = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.018, 8, 64), new THREE.MeshBasicMaterial({ color: 0xdac39e, transparent: true, opacity: 0.85 }));
+        marker.position.copy(mesh.position);
+        marker.rotation.x = Math.PI / 2;
+        this.content.add(marker);
+      }
     }
+  }
+
+  private buildNeighbourhood(): void {
+    const hosts = nearbyHosts(this.catalogue);
+    const positions = new Float32Array(hosts.length * 3);
+    const colors = new Float32Array(hosts.length * 3);
+    const names: string[] = [];
+    hosts.forEach((host, index) => {
+      positions.set([host.position.x, host.position.y, host.position.z], index * 3);
+      const color = new THREE.Color(hostColor(host)).lerp(new THREE.Color(0xaebbb1), 0.28);
+      colors.set([color.r, color.g, color.b], index * 3);
+      names.push(host.planet.hostname);
+    });
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const stars = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0x9ca9a3, size: 0.24, transparent: true, opacity: 0.52, depthWrite: false }));
-    stars.name = 'persistent-starfield';
-    this.scene.add(stars);
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const points = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.68, map: this.spriteTexture, vertexColors: true, transparent: true, opacity: 0.96, alphaTest: 0.035, depthWrite: false }));
+    points.userData.systems = names;
+    this.content.add(points);
+    const home = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.spriteTexture, color: 0xe5c49a, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
+    home.scale.setScalar(1.6);
+    this.content.add(home);
+  }
+
+  private buildLookback(planet: PlanetRow): void {
+    const geometry = lookBackGeometry(planet);
+    if (!geometry) return;
+    const home = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.spriteTexture, color: 0xf0d7a7, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending }));
+    home.name = 'lookback-home';
+    home.scale.setScalar(1.75);
+    this.content.add(home);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.18, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffe4b5 }));
+    this.content.add(core);
+    const path = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(geometry.camera.x, geometry.camera.y, geometry.camera.z)]),
+      new THREE.LineBasicMaterial({ color: 0xc8b48e, transparent: true, opacity: 0.12, depthWrite: false }),
+    );
+    this.content.add(path);
   }
 
   setView(view: ViewName, planet: PlanetRow | null): void {
@@ -345,19 +439,30 @@ class WorldEngine {
     this.currentPlanet = planet;
     this.controls.autoRotate = view === 'atlas' && !this.reducedMotion;
     this.controls.autoRotateSpeed = 0.12;
-    this.controls.enableZoom = true;
-    this.controls.minDistance = view === 'planet' ? 4.8 : view === 'system' ? 12 : 20;
-    this.controls.maxDistance = view === 'planet' ? 20 : view === 'system' ? 58 : 80;
-    let destination = new THREE.Vector3(0, 7, 44);
+    this.controls.enableZoom = view !== 'planet' && view !== 'earth' && view !== 'lookback';
+    this.controls.enableRotate = view !== 'lookback';
+    this.controls.minDistance = view === 'planet' ? 4.8 : view === 'earth' ? 7.8 : view === 'lookback' ? 42 : view === 'system' ? 12 : view === 'solar' ? 20 : 18;
+    this.controls.maxDistance = view === 'planet' ? 20 : view === 'earth' ? 7.8 : view === 'lookback' ? 42 : view === 'system' ? 58 : view === 'solar' ? 110 : 80;
+    let destination = new THREE.Vector3(0, 0.45, 7.8);
     const target = new THREE.Vector3(0, 0, 0);
-    if (view === 'atlas') this.buildAtlas();
+    if (view === 'earth') this.buildEarth();
+    else if (view === 'solar') {
+      this.buildSolar();
+      destination = new THREE.Vector3(0, 34, 46);
+    } else if (view === 'neighbourhood') {
+      this.buildNeighbourhood();
+      destination = new THREE.Vector3(0, 7, 44);
+    } else if (view === 'atlas') this.buildAtlas();
     else if (view === 'system' && planet) {
       this.buildSystem(planet);
       destination = new THREE.Vector3(0, 18, 33);
     } else if (view === 'planet' && planet) {
       this.buildPlanet(planet);
       destination = new THREE.Vector3(0, 0.45, this.planetDistance);
-      this.controls.enableZoom = false;
+    } else if (view === 'lookback' && planet) {
+      this.buildLookback(planet);
+      const geometry = lookBackGeometry(planet);
+      if (geometry) destination = new THREE.Vector3(geometry.camera.x, geometry.camera.y, geometry.camera.z);
     }
     if (instant) {
       this.camera.position.copy(destination);
@@ -560,6 +665,13 @@ class WorldEngine {
       if (globe) globe.position.x = centerX;
       if (atmosphere) atmosphere.position.x = centerX;
     }
+    if (this.currentView === 'earth') {
+      const centerX = width < 700 ? 0 : 1.05;
+      const globe = this.content.getObjectByName('earth-globe');
+      const atmosphere = this.content.getObjectByName('earth-atmosphere');
+      if (globe) globe.position.x = centerX;
+      if (atmosphere) atmosphere.position.x = centerX;
+    }
   }
 
   private animate(): void {
@@ -618,9 +730,6 @@ class WorldEngine {
     disposeGroup(this.content);
     this.departing.forEach((departing) => disposeGroup(departing.group));
     this.departing = [];
-    const starfield = this.scene.getObjectByName('persistent-starfield') as THREE.Points | undefined;
-    starfield?.geometry.dispose();
-    if (starfield?.material instanceof THREE.Material) starfield.material.dispose();
     this.spriteTexture.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
