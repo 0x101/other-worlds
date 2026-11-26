@@ -156,10 +156,14 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .evidence-list dt { color: var(--text-muted); }
 .evidence-list dd { color: var(--text); text-align: right; overflow-wrap: anywhere; }
 .evidence-list small { display: block; margin-top: 4px; color: var(--p-faint); font-size: 9px; font-weight: 400; line-height: 1.55; }
+.evidence-list small a { display: inline-flex; align-items: center; gap: 3px; min-height: 28px; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 .evidence-list .is-unknown dd { color: var(--p-faint); font-style: italic; }
 .evidence-footer { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
 .evidence-footer p { color: var(--text-muted); font-size: 10px; line-height: 1.65; }
 .evidence-footer a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--accent); font-size: 10px; }
+.export-actions { display: flex; gap: 8px; margin: 14px 0; }
+.export-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); color: var(--text); font-size: 11px; transition: background 160ms ease-out, border-color 160ms ease-out; }
+.export-actions button:hover { background: oklch(0.3 0.02 160 / .4); border-color: var(--p-muted); }
 @keyframes panel-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 

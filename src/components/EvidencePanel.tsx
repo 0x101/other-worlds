@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, X } from 'lucide-react';
-import type { Catalogue, EvidenceStatus, PlanetRow, Provenance } from '../types';
+import { ArrowUpRight, Download, X } from 'lucide-react';
+import type { Catalogue, EvidenceStatus, PlanetRow, Provenance, TraceabilityRow } from '../types';
 import { detectionLabels, evidenceFor } from '../lib/evidence';
+import { downloadText, rawExportDocument, rawPlanetRecord, recordsToCsv, safeFilename } from '../lib/exports';
 
 interface EvidencePanelProps {
   planet: PlanetRow;
   catalogue: Catalogue;
   provenance: Provenance;
+  traceProvenance: Provenance;
+  trace: TraceabilityRow | null;
   onClose: () => void;
 }
 
@@ -16,10 +19,10 @@ const STATUS_COPY: Record<EvidenceStatus, string> = {
   IMAGINED: 'Deterministic artistic reconstruction — never an observation.',
 };
 
-export default function EvidencePanel({ planet, catalogue, provenance, onClose }: EvidencePanelProps) {
+export default function EvidencePanel({ planet, catalogue, provenance, traceProvenance, trace, onClose }: EvidencePanelProps) {
   const [status, setStatus] = useState<EvidenceStatus>('MEASURED');
   const siblings = catalogue.systems.get(planet.hostname) ?? [planet];
-  const evidence = useMemo(() => evidenceFor(planet, siblings), [planet, siblings]);
+  const evidence = useMemo(() => evidenceFor(planet, siblings, trace), [planet, siblings, trace]);
   const detections = detectionLabels(planet);
   const counts = useMemo(() => ({
     MEASURED: evidence.filter((item) => item.status === 'MEASURED').length,
@@ -56,15 +59,24 @@ export default function EvidencePanel({ planet, catalogue, provenance, onClose }
         <dl className="evidence-list">
           {evidence.filter((item) => item.status === status).map((item) => (
             <div key={item.label} className={item.value === 'Unknown' ? 'is-unknown' : ''}>
-              <dt>{item.label}<small>{item.source}</small></dt>
+              <dt>
+                {item.label}
+                <small>{item.source}</small>
+                {item.reference && <small>{item.reference.url ? <a href={item.reference.url} target="_blank" rel="noreferrer">{item.reference.label} <ArrowUpRight size={11} /></a> : item.reference.label}</small>}
+              </dt>
               <dd>{item.value}{item.note && <small>{item.note}</small>}</dd>
             </div>
           ))}
         </dl>
         <footer className="evidence-footer">
           <p>{provenance.compositeCaveat}</p>
-          <p>Snapshot: {new Date(provenance.fetchedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })} UTC · {provenance.rowCount.toLocaleString('en-US')} rows. Nulls remain Unknown.</p>
-          <a href={provenance.requestUrl} target="_blank" rel="noreferrer">Open the exact NASA TAP request <ArrowUpRight size={14} /></a>
+          <p>Base snapshot: {new Date(provenance.fetchedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })} UTC · {provenance.rowCount.toLocaleString('en-US')} rows. Traceability companion: {new Date(traceProvenance.fetchedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })} UTC. Nulls remain Unknown.</p>
+          <div className="export-actions" aria-label="Raw source exports">
+            <button onClick={() => downloadText(`${safeFilename(planet.pl_name)}-raw.json`, JSON.stringify(rawExportDocument(planet, trace, provenance, traceProvenance), null, 2), 'application/json')}><Download size={14} />Raw JSON</button>
+            <button onClick={() => downloadText(`${safeFilename(planet.pl_name)}-raw.csv`, recordsToCsv([rawPlanetRecord(planet, trace)]), 'text/csv;charset=utf-8')}><Download size={14} />Raw CSV</button>
+          </div>
+          <a href={provenance.requestUrl} target="_blank" rel="noreferrer">Open the exact base NASA TAP request <ArrowUpRight size={14} /></a>
+          <a href={traceProvenance.requestUrl} target="_blank" rel="noreferrer">Open the traceability NASA TAP request <ArrowUpRight size={14} /></a>
         </footer>
       </aside>
     </div>

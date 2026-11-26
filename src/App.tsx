@@ -4,8 +4,9 @@ import Scene from './components/Scene';
 import StaticScene from './components/StaticScene';
 import SearchPanel from './components/SearchPanel';
 import EvidencePanel from './components/EvidencePanel';
-import type { Catalogue, JourneyState, PlanetRow, Provenance } from './types';
+import type { Catalogue, JourneyState, PlanetRow, Provenance, TraceabilityCatalogue } from './types';
 import { parseCatalogue } from './lib/catalogue';
+import { parseTraceability, validateTraceability } from './lib/traceability';
 import { DEFAULT_JOURNEY, parseJourney, updateBrowserUrl } from './lib/urlState';
 import { formatValue, generateWorld } from './lib/world';
 
@@ -14,6 +15,8 @@ export default function App() {
   const journeyRef = useRef(journey);
   const [catalogue, setCatalogue] = useState<Catalogue | null>(null);
   const [provenance, setProvenance] = useState<Provenance | null>(null);
+  const [traceability, setTraceability] = useState<TraceabilityCatalogue | null>(null);
+  const [traceProvenance, setTraceProvenance] = useState<Provenance | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [sceneReady, setSceneReady] = useState(false);
@@ -48,12 +51,19 @@ export default function App() {
     Promise.all([
       fetch(`${import.meta.env.BASE_URL}data/pscomppars.json`).then((response) => { if (!response.ok) throw new Error(`Catalogue request failed (${response.status}).`); return response.json(); }),
       fetch(`${import.meta.env.BASE_URL}data/provenance.json`).then((response) => { if (!response.ok) throw new Error(`Provenance request failed (${response.status}).`); return response.json(); }),
-    ]).then(([raw, source]: [unknown, Provenance]) => {
+      fetch(`${import.meta.env.BASE_URL}data/pscomppars-traceability.json`).then((response) => { if (!response.ok) throw new Error(`Traceability request failed (${response.status}).`); return response.json(); }),
+      fetch(`${import.meta.env.BASE_URL}data/traceability-provenance.json`).then((response) => { if (!response.ok) throw new Error(`Traceability provenance request failed (${response.status}).`); return response.json(); }),
+    ]).then(([raw, source, traceRaw, traceSource]: [unknown, Provenance, unknown, Provenance]) => {
       if (!active) return;
       const parsed = parseCatalogue(raw);
+      const parsedTrace = parseTraceability(traceRaw);
       if (parsed.planets.length !== source.rowCount) throw new Error(`Snapshot integrity mismatch: ${parsed.planets.length} rows loaded, ${source.rowCount} expected.`);
+      if (parsedTrace.rows.length !== traceSource.rowCount) throw new Error(`Traceability snapshot integrity mismatch: ${parsedTrace.rows.length} rows loaded, ${traceSource.rowCount} expected.`);
+      validateTraceability(parsed, parsedTrace);
       setCatalogue(parsed);
       setProvenance(source);
+      setTraceability(parsedTrace);
+      setTraceProvenance(traceSource);
     }).catch((error: unknown) => {
       if (active) setLoadError(error instanceof Error ? error.message : 'The catalogue could not be read.');
     });
@@ -220,8 +230,15 @@ export default function App() {
         </>
       )}
 
-      {catalogue && provenance && selected && journey.evidenceOpen && (
-        <EvidencePanel planet={selected} catalogue={catalogue} provenance={provenance} onClose={() => navigate({ evidenceOpen: false }, 'replace')} />
+      {catalogue && provenance && traceability && traceProvenance && selected && journey.evidenceOpen && (
+        <EvidencePanel
+          planet={selected}
+          catalogue={catalogue}
+          provenance={provenance}
+          traceProvenance={traceProvenance}
+          trace={traceability.byName.get(selected.pl_name) ?? null}
+          onClose={() => navigate({ evidenceOpen: false }, 'replace')}
+        />
       )}
 
       {sceneFailed && <div className="fallback-notice" role="status">3D is unavailable. Still reconstructions are active; the full journey remains accessible.</div>}

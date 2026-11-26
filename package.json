@@ -10,6 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "data:fetch": "node scripts/fetch-catalogue.mjs",
+    "data:fetch:traceability": "node scripts/fetch-traceability.mjs",
+    "data:validate": "node scripts/validate-data.mjs",
     "validate:browser": "node scripts/validate-browser.mjs"
   },
   "dependencies": {

@@ -1,0 +1,28 @@
+{
+  "validatedAt": "2026-11-26T08:06:55.200Z",
+  "passed": true,
+  "base": {
+    "rows": 6473,
+    "planets": 6473,
+    "systems": 4865,
+    "sha256": "6bcd8b57617226da328e85bee5c2955755ee054ed4d775dd43f03855cb2cb362",
+    "preserved": true
+  },
+  "traceability": {
+    "rawRows": 6473,
+    "normalizedRows": 6473,
+    "references": 2321,
+    "rawSha256": "1888a05dde9e18cc396f758e7e29251bde22ed30ce981ec262246701d1755f15",
+    "normalizedSha256": "7fc79edab2eb43dd2d8fe040f7c898377ebc9ed036b9b0495917a3455167efb1",
+    "comparedValues": 84149,
+    "comparedNormalizedCells": 440164
+  },
+  "referenceWorlds": [
+    "TRAPPIST-1 e",
+    "HD 189733 b",
+    "K2-18 b",
+    "Kepler-16 b",
+    "KIC 10001893 b"
+  ],
+  "missingValuePolicy": "All compared nulls remained null. No zero substitution or interpolation was applied."
+}

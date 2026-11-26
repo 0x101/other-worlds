@@ -20,6 +20,7 @@ Open `http://localhost:7100/`. The Vite `dev` script forwards host and port argu
 ```bash
 npm test
 npm run build
+npm run data:validate                    # full base/companion/raw integrity audit
 npm run validate:browser                 # development server, then stops it
 node scripts/validate-browser.mjs --preview  # production dist, then stops it
 ```
@@ -30,10 +31,14 @@ Browser validation requires Playwright Chromium (`npx playwright install chromiu
 
 The application reads the bundled real snapshot at `public/data/pscomppars.json`; it does not depend on a live NASA request at runtime. `public/data/provenance.json` records the exact request URL, query, fetch time, counts, field list, missing counts, attribution, and composite-table caveat. `data-query.sql` contains the same query.
 
-To intentionally refresh the snapshot:
+A separate 3.5 MiB columnar companion adds source uncertainties, limit flags, per-parameter publications, and discovery instrument metadata. Its 17 MiB raw response remains reproducible at `data/raw/pscomppars-traceability.json` and is not shipped. Both files are cross-checked for all 6,473 planets before the atlas opens. Raw JSON/CSV export is available in the evidence inspector.
+
+To intentionally refresh the snapshots:
 
 ```bash
-npm run data:fetch
+npm run data:fetch                 # replaces the preserved base: review deliberately
+npm run data:fetch:traceability   # raw + normalized companion
+npm run data:validate
 npm test
 npm run build
 ```

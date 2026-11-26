@@ -9,6 +9,8 @@ React 19 + TypeScript + Vite for the static application; Three.js and OrbitContr
 - `src/lib/catalogue.ts`: strict parsing, null preservation, unique indexes, system grouping, filters, sky projection, and source labeling for layout fallbacks.
 - `src/lib/world.ts`: identifier hashing, seeded generation, classification, palette/scale/illumination rules, gravity, and compressed orbits.
 - `src/lib/evidence.ts`: measured/derived/imagined evidence records and detection labels.
+- `src/lib/traceability.ts`: strict raw/columnar companion parsing, publication-link sanitization, asymmetric uncertainty formatting, and base/companion integrity checks.
+- `src/lib/exports.ts`: exact source-record JSON/CSV generation and browser downloads; nulls and source precision are preserved.
 - `src/lib/urlState.ts`: parsing, validation, clamping, serialization, and history updates.
 - `src/components/Scene.tsx`: one persistent renderer, scene rebuilding per view, camera transitions, 3D picking, resizing, disposal, and render metrics.
 - `src/components/StaticScene.tsx`: SVG/CSS fallback views using the same real data and recipes.
@@ -18,10 +20,10 @@ React 19 + TypeScript + Vite for the static application; Three.js and OrbitContr
 
 ## Data flow
 
-1. `App` fetches the bundled JSON array and provenance in parallel.
-2. Parsing validates identity, numeric/string field types, finite values, and uniqueness; absent optional fields become null.
-3. The loaded row count must equal `provenance.rowCount` or the retryable error state appears.
-4. Indexes expose every planet and system to the DOM and renderer. The atlas stores one point per host; selection resolves the complete sibling list.
+1. `App` fetches the preserved base JSON, its provenance, the normalized traceability companion, and companion provenance in parallel. The 17 MiB raw companion is not in the web bundle.
+2. Parsing validates identity, numeric/string field types, finite values, normalized schema widths/reference indexes, and uniqueness; absent optional fields become null.
+3. Both loaded row counts must match their provenance. All 13 traceable source values and host identity must agree for every planet, or the retryable error state appears.
+4. Indexes expose every planet and system to the DOM and renderer. The atlas stores one point per host; selection resolves the complete sibling list and its source traceability row.
 5. A planet recipe is a pure function of the source row. No `Math.random()` or time-based texture seed is used.
 
 ## URL state

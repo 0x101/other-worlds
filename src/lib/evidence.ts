@@ -1,28 +1,37 @@
-import type { EvidenceItem, PlanetRow } from '../types';
+import type { EvidenceItem, PlanetRow, TraceabilityRow, TraceableField } from '../types';
 import { derivedGravity, displayOrbit, formatValue, generateWorld } from './world';
+import { formatMeasurement, parseReference } from './traceability';
 
-export function evidenceFor(planet: PlanetRow, siblings: PlanetRow[]): EvidenceItem[] {
+export function evidenceFor(planet: PlanetRow, siblings: PlanetRow[], trace?: TraceabilityRow | null): EvidenceItem[] {
   const world = generateWorld(planet);
   const orbit = displayOrbit(planet, Math.max(0, siblings.findIndex((item) => item.pl_name === planet.pl_name)));
   const gravity = derivedGravity(planet);
-  const measured = (label: string, value: number | string | null, source: string, unit = '', note?: string): EvidenceItem => ({
-    label, value: formatValue(value, unit), status: 'MEASURED', source, note,
-  });
+  const measured = (label: string, value: number | string | null, source: string, unit = '', note?: string, field?: TraceableField): EvidenceItem => {
+    const measurement = field ? trace?.measurements[field] : undefined;
+    const limit = measurement?.limit ? `${measurement.limit > 0 ? 'Upper' : 'Lower'} limit flag reported by the archive.` : '';
+    return {
+      label,
+      value: measurement ? formatMeasurement(measurement, unit) : formatValue(value, unit),
+      status: 'MEASURED', source,
+      note: [note, limit].filter(Boolean).join(' ') || undefined,
+      reference: measurement?.reference,
+    };
+  };
   return [
-    measured('Planet radius', planet.pl_rade, 'NASA pscomppars.pl_rade', 'R⊕'),
-    measured('Planet mass', planet.pl_bmasse, 'NASA pscomppars.pl_bmasse', 'M⊕', planet.pl_bmassprov ? `Archive best-mass provenance: ${planet.pl_bmassprov}.` : 'Best available mass field; provenance is not supplied.'),
-    measured('Planet density', planet.pl_dens, 'NASA pscomppars.pl_dens', 'g/cm³'),
-    measured('Equilibrium temperature', planet.pl_eqt, 'NASA pscomppars.pl_eqt', 'K', 'Archive black-body model value; not a direct surface-temperature reading.'),
-    measured('Insolation', planet.pl_insol, 'NASA pscomppars.pl_insol', 'Earth flux'),
-    measured('Orbital period', planet.pl_orbper, 'NASA pscomppars.pl_orbper', 'days'),
-    measured('Semi-major axis', planet.pl_orbsmax, 'NASA pscomppars.pl_orbsmax', 'au'),
-    measured('Eccentricity', planet.pl_orbeccen, 'NASA pscomppars.pl_orbeccen'),
-    measured('Host temperature', planet.st_teff, 'NASA pscomppars.st_teff', 'K'),
-    measured('Host radius', planet.st_rad, 'NASA pscomppars.st_rad', 'R☉'),
-    measured('Host mass', planet.st_mass, 'NASA pscomppars.st_mass', 'M☉'),
+    measured('Planet radius', planet.pl_rade, 'NASA pscomppars.pl_rade', 'R⊕', undefined, 'pl_rade'),
+    measured('Planet mass', planet.pl_bmasse, 'NASA pscomppars.pl_bmasse', 'M⊕', planet.pl_bmassprov ? `Archive best-mass provenance: ${planet.pl_bmassprov}.` : 'Best available mass field; provenance is not supplied.', 'pl_bmasse'),
+    measured('Planet density', planet.pl_dens, 'NASA pscomppars.pl_dens', 'g/cm³', undefined, 'pl_dens'),
+    measured('Equilibrium temperature', planet.pl_eqt, 'NASA pscomppars.pl_eqt', 'K', 'Archive black-body model value; not a direct surface-temperature reading.', 'pl_eqt'),
+    measured('Insolation', planet.pl_insol, 'NASA pscomppars.pl_insol', 'Earth flux', undefined, 'pl_insol'),
+    measured('Orbital period', planet.pl_orbper, 'NASA pscomppars.pl_orbper', 'days', undefined, 'pl_orbper'),
+    measured('Semi-major axis', planet.pl_orbsmax, 'NASA pscomppars.pl_orbsmax', 'au', undefined, 'pl_orbsmax'),
+    measured('Eccentricity', planet.pl_orbeccen, 'NASA pscomppars.pl_orbeccen', '', undefined, 'pl_orbeccen'),
+    measured('Host temperature', planet.st_teff, 'NASA pscomppars.st_teff', 'K', undefined, 'st_teff'),
+    measured('Host radius', planet.st_rad, 'NASA pscomppars.st_rad', 'R☉', undefined, 'st_rad'),
+    measured('Host mass', planet.st_mass, 'NASA pscomppars.st_mass', 'M☉', undefined, 'st_mass'),
     measured('Host spectral type', planet.st_spectype, 'NASA pscomppars.st_spectype'),
-    measured('Host luminosity', planet.st_lum, 'NASA pscomppars.st_lum', 'log₁₀(L☉)'),
-    measured('Distance', planet.sy_dist, 'NASA pscomppars.sy_dist', 'pc'),
+    measured('Host luminosity', planet.st_lum, 'NASA pscomppars.st_lum', 'log₁₀(L☉)', undefined, 'st_lum'),
+    measured('Distance', planet.sy_dist, 'NASA pscomppars.sy_dist', 'pc', undefined, 'sy_dist'),
     measured('Right ascension', planet.ra, 'NASA pscomppars.ra', '°'),
     measured('Declination', planet.dec, 'NASA pscomppars.dec', '°'),
     measured('System planets', planet.sy_pnum, 'NASA pscomppars.sy_pnum'),
@@ -32,6 +41,12 @@ export function evidenceFor(planet: PlanetRow, siblings: PlanetRow[]): EvidenceI
     measured('Discovery', planet.disc_year, 'NASA pscomppars.disc_year'),
     measured('Method', planet.discoverymethod, 'NASA pscomppars.discoverymethod'),
     measured('Facility', planet.disc_facility, 'NASA pscomppars.disc_facility'),
+    {
+      label: 'Discovery publication', value: trace?.discoveryReference?.label ?? parseReference(planet.disc_refname)?.label ?? 'Unknown',
+      status: 'MEASURED', source: 'NASA pscomppars.disc_refname', reference: trace?.discoveryReference ?? parseReference(planet.disc_refname),
+    },
+    measured('Discovery telescope', trace?.telescope ?? null, 'NASA pscomppars.disc_telescope'),
+    measured('Discovery instrument', trace?.instrument ?? null, 'NASA pscomppars.disc_instrument'),
     {
       label: 'Surface gravity', value: formatValue(gravity, 'm/s²'), status: 'DERIVED',
       source: 'g = 9.80665 × pl_bmasse / pl_rade²', note: 'Calculated only when both archive mass and radius are present; no habitability claim follows.',

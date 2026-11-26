@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-26T06:49:18.215Z",
+  "validatedAt": "2026-11-26T08:14:54.767Z",
   "mode": "preview",
   "baseUrl": "http://127.0.0.1:7100",
   "checks": [
@@ -40,6 +40,26 @@
     },
     {
       "name": "measured evidence names its NASA source fields",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "source uncertainty is displayed without false precision",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "per-parameter publication link is actionable",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "raw JSON download reproduces source values and provenance",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "raw CSV download retains measurement and uncertainty fields",
       "pass": true,
       "details": null
     },
@@ -246,19 +266,19 @@
       "ready": true,
       "view": "atlas",
       "planet": null,
-      "fps": 44,
+      "fps": 47,
       "drawCalls": 6,
       "triangles": 2,
       "systems": 4865,
       "planets": 6473,
-      "resources": 9,
-      "transferBytes": 943300
+      "resources": 11,
+      "transferBytes": 1688692
     },
     "planet": {
       "ready": true,
       "view": "planet",
       "planet": "TRAPPIST-1 e",
-      "fps": 22,
+      "fps": 33,
       "drawCalls": 4,
       "triangles": 26498,
       "systems": 4865,

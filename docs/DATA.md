@@ -13,6 +13,19 @@
 
 The full request succeeded; no bounded fallback subset was needed. No API key was used. The 4.8 MiB raw snapshot is committed once and used directly by the app, avoiding a second derived catalogue copy.
 
+### Traceability companion
+
+A second, non-destructive `pscomppars` request adds uncertainties (`*err1`, `*err2`), limit flags (`*lim`), per-parameter publication links (`*_reflink`), and discovery telescope/instrument/locale fields for 13 numeric measurements. The original base response and its provenance are unchanged; `scripts/validate-data.mjs` enforces the base SHA-256 and exact one-to-one identity, host, and source-value agreement.
+
+- **Exact query:** `traceability-query.sql` and `public/data/traceability-provenance.json`.
+- **Raw response:** `data/raw/pscomppars-traceability.json` (not shipped in `dist/`).
+- **Runtime response:** `public/data/pscomppars-traceability.json`, schema `other-worlds/pscomppars-traceability-v1`.
+- **Counts:** 6,473 rows, 6,473 unique planets, 4,865 systems, 2,321 shared publication-reference strings.
+- **Normalization:** rows are arrays in the provenance `fields` order. Reference fields contain zero-based indexes into the shared `references` array. Null stays null. The validator compares every normalized cell with the raw response.
+- **Publication links:** the archive's anchor-formatted `reflink` values are parsed into text and an HTTPS URL. They are never inserted as HTML. Fields without a companion reference remain explicitly without a per-parameter reference rather than borrowing another field's citation.
+
+Limit flags are shown as archive-reported upper/lower-limit metadata. Uncertainties retain separate positive and negative values. Missing errors, limits, or references are not inferred. Raw JSON and CSV exports merge the preserved base row with its companion fields and include both exact queries and fetch timestamps; no derived or artistic values are presented as raw source measurements.
+
 ### Composite-table caveat
 
 `pscomppars` supplies one row per planet with comparatively complete values that may come from different references. A row is **not necessarily a self-consistent or homogeneous published solution**. The inspector repeats this caveat. `pl_bmasse` is the archive best-mass field and may represent mass, an inclination-corrected mass, or `M sin(i)` according to `pl_bmassprov`; it is not silently described as a direct mass measurement in every case.

@@ -48,6 +48,38 @@ export interface Catalogue {
   systems: Map<string, PlanetRow[]>;
 }
 
+export type TraceableField = 'pl_rade' | 'pl_bmasse' | 'pl_dens' | 'pl_orbper' | 'pl_orbsmax' | 'pl_orbeccen' | 'pl_eqt' | 'pl_insol' | 'st_teff' | 'st_rad' | 'st_mass' | 'st_lum' | 'sy_dist';
+
+export interface SourceReference {
+  label: string;
+  url: string | null;
+  raw: string;
+}
+
+export interface SourceMeasurement {
+  value: number | null;
+  positiveError: number | null;
+  negativeError: number | null;
+  limit: number | null;
+  reference: SourceReference | null;
+}
+
+export interface TraceabilityRow {
+  pl_name: string;
+  hostname: string;
+  measurements: Record<TraceableField, SourceMeasurement>;
+  discoveryReference: SourceReference | null;
+  telescope: string | null;
+  instrument: string | null;
+  locale: string | null;
+  raw: Record<string, string | number | null>;
+}
+
+export interface TraceabilityCatalogue {
+  rows: TraceabilityRow[];
+  byName: Map<string, TraceabilityRow>;
+}
+
 export interface Provenance {
   title: string;
   sourceUrl: string;
@@ -85,6 +117,7 @@ export interface EvidenceItem {
   status: EvidenceStatus;
   source: string;
   note?: string;
+  reference?: SourceReference | null;
 }
 
 export type WorldKind = 'rocky' | 'sub-neptune' | 'ice-giant' | 'gas-giant' | 'unknown';
