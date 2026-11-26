@@ -100,15 +100,8 @@ export interface CameraViewState {
   elevation: number;
 }
 
-export type ExperienceName = 'wonder' | 'observatory' | 'studio';
-export type StudioComposition = 'left' | 'center' | 'right';
-export type PostcardCrop = 'wide' | 'square';
-
-export interface StudioState {
-  exposure: number;
-  composition: StudioComposition;
-  crop: PostcardCrop;
-}
+export type ExperienceName = 'wonder' | 'observatory';
+export type ShareTemplate = 'portrait' | 'field-note' | 'orbital-study';
 
 export interface JourneyState {
   view: ViewName;
@@ -118,7 +111,7 @@ export interface JourneyState {
   experience: ExperienceName;
   evidenceOpen: boolean;
   camera: CameraViewState;
-  studio: StudioState;
+  shareTemplate: ShareTemplate | null;
 }
 
 export type EvidenceStatus = 'MEASURED' | 'DERIVED' | 'IMAGINED';

@@ -22,7 +22,11 @@ function check(name, pass, details = null) {
 }
 
 function watch(page, label) {
-  page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push({ page: label, text: message.text() }); });
+  page.on('console', (message) => {
+    if (message.type() !== 'error') return;
+    if (label === 'no-webgl' && message.text() === 'THREE.WebGLRenderer: Error creating WebGL context.') return;
+    consoleErrors.push({ page: label, text: message.text() });
+  });
   page.on('pageerror', (error) => pageErrors.push({ page: label, text: error.message }));
   page.on('response', (response) => { if (response.status() >= 400) failedResponses.push({ page: label, status: response.status(), url: response.url() }); });
 }
@@ -142,9 +146,6 @@ try {
   await page.keyboard.press('Escape');
   check('evidence closes with Escape', await page.getByRole('dialog').count() === 0);
 
-  await page.locator('.planet-actions').getByRole('button', { name: 'Share this view' }).click();
-  const clipboard = await page.evaluate(() => navigator.clipboard.readText());
-  check('share copies the exact current URL', clipboard === page.url(), { clipboard, current: page.url() });
   const canvas = page.locator('.scene-canvas canvas');
   await canvas.hover({ position: { x: 1040, y: 420 } });
   await page.mouse.move(1040, 420);
@@ -152,14 +153,73 @@ try {
   await page.mouse.move(1110, 455, { steps: 8 });
   await page.mouse.up();
   await page.waitForTimeout(400);
-  check('camera interaction updates useful URL state', /az=/.test(page.url()) && /el=/.test(page.url()), page.url());
+  check('direct camera manipulation remains on the world canvas and updates URL state', /az=/.test(page.url()) && /el=/.test(page.url()), page.url());
   const sharedUrl = page.url();
   await page.reload({ waitUntil: 'networkidle' });
   await ready(page, 'planet');
   check('deep link reopens the same world and camera', page.url() === sharedUrl && await page.evaluate(() => window.__OTHER_WORLDS__?.planet === 'TRAPPIST-1 e'));
 
+  const worldUrl = page.url();
+  check('Studio is absent as a destination and no manual designer controls remain', await page.getByRole('button', { name: 'Studio', exact: true }).count() === 0 && await page.getByRole('slider').count() === 0);
+  const shareTrigger = page.locator('.planet-actions').getByRole('button', { name: 'Share this world' });
+  await page.evaluate(() => {
+    window.__otherWorldsToBlob = HTMLCanvasElement.prototype.toBlob;
+    HTMLCanvasElement.prototype.toBlob = function (callback) { callback(null); };
+  });
+  await shareTrigger.click();
+  await page.getByText('PNG composition was interrupted.').waitFor();
+  check('Share PNG failure is explicit and recoverable', await page.getByRole('button', { name: 'Try this template again' }).isVisible() && page.url().includes('share=portrait'));
+  await page.evaluate(() => {
+    HTMLCanvasElement.prototype.toBlob = window.__otherWorldsToBlob;
+    delete window.__otherWorldsToBlob;
+  });
+  await page.getByRole('button', { name: 'Try this template again' }).click();
+  await page.locator('.share-preview img').waitFor({ timeout: 45_000 });
+  check('Share opens as a contextual dialog with a live Portrait preview', await page.getByRole('dialog').isVisible() && await page.locator('.share-preview').getAttribute('data-template') === 'portrait');
+  check('Share offers exactly three finished templates and no customization sliders', await page.locator('.share-template-picker > button').count() === 3 && await page.getByRole('slider').count() === 0);
+  await shot(page, 'desktop-share-portrait');
+
+  const pngSizes = { portrait: [1800, 2250], 'field-note': [2400, 1800], 'orbital-study': [2200, 2200] };
+  let exactPortrait = '';
+  for (const template of ['portrait', 'field-note', 'orbital-study']) {
+    if (template !== 'portrait') {
+      await page.locator('.share-template-picker > button').filter({ hasText: template === 'field-note' ? 'Field Note' : 'Orbital Study' }).click();
+      await page.locator(`.share-preview[data-template="${template}"] img`).waitFor({ timeout: 45_000 });
+      await shot(page, `desktop-share-${template}`);
+    }
+    await page.locator('.share-actions').getByRole('button', { name: 'Copy exact link' }).click();
+    const clipboard = await page.evaluate(() => navigator.clipboard.readText());
+    check(`${template}: copy exact link preserves world, camera, and template`, clipboard === page.url() && clipboard.includes(`share=${template}`) && clipboard.includes('az=') && clipboard.includes('el='), { clipboard, current: page.url() });
+    if (template === 'portrait') exactPortrait = clipboard;
+    const downloadEvent = page.waitForEvent('download', { timeout: 45_000 });
+    await page.getByRole('button', { name: 'Download PNG' }).click();
+    const download = await downloadEvent;
+    const exportPath = path.join(evidenceDir, `share-trappist-1-e-${template}.png`);
+    await download.saveAs(exportPath);
+    const bytes = await readFile(exportPath);
+    const [width, height] = pngSizes[template];
+    check(`${template}: actual high-resolution PNG download has correct dimensions and content`, download.suggestedFilename() === `trappist-1-e-${template}.png` && bytes.subarray(1, 4).toString() === 'PNG' && bytes.readUInt32BE(16) === width && bytes.readUInt32BE(20) === height && bytes.length > 50_000, { bytes: bytes.length, filename: download.suggestedFilename(), width, height });
+  }
+
+  await page.keyboard.press('Escape');
+  check('Share closes with Escape back to the same world and camera', await page.getByRole('dialog').count() === 0 && page.url() === worldUrl, { before: worldUrl, after: page.url() });
+  check('closing Share restores trigger focus', await shareTrigger.evaluate((element) => document.activeElement === element));
+  await page.goto(exactPortrait, { waitUntil: 'networkidle' });
+  await ready(page, 'planet');
+  await page.locator('.share-preview[data-template="portrait"] img').waitFor({ timeout: 45_000 });
+  check('exact copied link reopens Share with its selected template', page.url() === exactPortrait && await page.locator('.share-template-picker > button').filter({ hasText: 'Portrait' }).getAttribute('aria-pressed') === 'true');
+  await page.keyboard.press('Escape');
+  await page.goto(`${base}/?planet=TRAPPIST-1+e&view=planet&mode=studio&az=0&el=0.08&exp=0.85&comp=left&crop=square`, { waitUntil: 'networkidle' });
+  await ready(page, 'planet');
+  await page.locator('.share-preview[data-template="portrait"] img').waitFor({ timeout: 45_000 });
+  check('legacy Studio deep link migrates to Portrait with no designer controls', await page.getByRole('dialog').isVisible() && await page.getByRole('slider').count() === 0 && await page.getByRole('button', { name: 'Studio', exact: true }).count() === 0);
+  await page.locator('.share-actions').getByRole('button', { name: 'Copy exact link' }).click();
+  const migratedLink = await page.evaluate(() => navigator.clipboard.readText());
+  check('migrated exact link removes all legacy Studio parameters', migratedLink.includes('share=portrait') && !/mode=studio|exp=|comp=|crop=/.test(migratedLink), migratedLink);
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Back to the system' }).click();
   await ready(page, 'system');
+  check('system view contains a seven-world orbital fingerprint', await page.locator('.orbital-fingerprint svg').isVisible() && await page.locator('.orbital-fingerprint [data-planet]').count() === 7);
   await page.getByRole('button', { name: 'Back to the observed sky' }).click();
   await ready(page, 'atlas');
   await page.getByRole('button', { name: 'Rocky', exact: true }).click();
@@ -190,6 +250,16 @@ try {
   check('mobile back navigation stays above the portrait metadata', backPosition.position === 'fixed' && backPosition.top >= 70 && backPosition.top < 150, backPosition);
   const touchTarget = await phone.getByRole('button', { name: 'Inspect the evidence' }).evaluate((element) => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height }));
   check('primary mobile action meets 44px touch target', touchTarget.height >= 44 && touchTarget.width >= 44, touchTarget);
+  await phone.locator('.planet-actions').getByRole('button', { name: 'Share this world' }).click();
+  await phone.locator('.share-preview[data-template="portrait"] img').waitFor({ timeout: 45_000 });
+  await noOverflow(phone, 'mobile Share');
+  const mobileDownload = phone.getByRole('button', { name: 'Download PNG' });
+  check('mobile Share keeps templates and export tappable without sliders', await mobileDownload.isVisible() && await mobileDownload.evaluate((element) => element.getBoundingClientRect().height >= 44) && await phone.locator('.share-template-picker > button').count() === 3 && await phone.getByRole('slider').count() === 0);
+  await shot(phone, 'mobile-share');
+  await phone.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.reject(new Error('Clipboard blocked for validation')) } }));
+  await phone.locator('.share-actions').getByRole('button', { name: 'Copy exact link' }).click();
+  check('blocked clipboard selects the exact link for manual recovery', await phone.locator('#share-exact-link').evaluate((element) => document.activeElement === element && element.selectionStart === 0 && element.selectionEnd === element.value.length));
+  await phone.locator('.share-header').getByRole('button', { name: 'Close Share' }).click();
   await phone.getByRole('button', { name: 'Inspect the evidence' }).click();
   await phone.getByRole('dialog').waitFor();
   await noOverflow(phone, 'mobile evidence');
@@ -216,6 +286,15 @@ try {
   check('gas giant receives bands, never solid terrain', await quiet.getByText(/Illustrative atmosphere · seed/).isVisible());
   check('reduced-motion removes CSS animation', await quiet.locator('.world-intro').evaluate((element) => getComputedStyle(element).animationName === 'none'));
   await shot(quiet, 'desktop-gas-giant-reduced-motion');
+  await quiet.locator('.planet-actions').getByRole('button', { name: 'Share this world' }).click();
+  await quiet.locator('.share-template-picker > button').filter({ hasText: 'Field Note' }).click();
+  await quiet.locator('.share-preview[data-template="field-note"] img').waitFor({ timeout: 45_000 });
+  check('reduced-motion Share dialog has no animation', await quiet.locator('.share-dialog').evaluate((element) => getComputedStyle(element).animationName === 'none'));
+  const reducedDownloadEvent = quiet.waitForEvent('download', { timeout: 45_000 });
+  await quiet.getByRole('button', { name: 'Download PNG' }).click();
+  const reducedDownload = await reducedDownloadEvent;
+  const reducedBytes = await readFile(await reducedDownload.path());
+  check('reduced-motion exports a full-resolution Field Note PNG', reducedBytes.subarray(1, 4).toString() === 'PNG' && reducedBytes.readUInt32BE(16) === 2400 && reducedBytes.readUInt32BE(20) === 1800 && reducedBytes.length > 50_000, { bytes: reducedBytes.length });
   await reduced.close();
 
   const fallbackContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
@@ -227,6 +306,7 @@ try {
     };
   });
   const fallbackPage = await fallbackContext.newPage();
+  watch(fallbackPage, 'no-webgl');
   await fallbackPage.goto(`${base}/?planet=TRAPPIST-1+e&view=planet&az=0&el=0.08`, { waitUntil: 'networkidle' });
   await fallbackPage.getByTestId('static-scene').waitFor();
   check('no-WebGL fallback renders a still reconstruction', await fallbackPage.getByTestId('static-scene').isVisible());
@@ -235,6 +315,15 @@ try {
   check('fallback retains evidence inspection', await fallbackPage.getByRole('dialog').isVisible());
   await fallbackPage.keyboard.press('Escape');
   await shot(fallbackPage, 'desktop-static-fallback');
+  await fallbackPage.locator('.planet-actions').getByRole('button', { name: 'Share this world' }).click();
+  await fallbackPage.locator('.share-template-picker > button').filter({ hasText: 'Orbital Study' }).click();
+  await fallbackPage.locator('.share-preview[data-template="orbital-study"] img').waitFor({ timeout: 45_000 });
+  const fallbackDownloadEvent = fallbackPage.waitForEvent('download', { timeout: 45_000 });
+  await fallbackPage.getByRole('button', { name: 'Download PNG' }).click();
+  const fallbackDownload = await fallbackDownloadEvent;
+  const fallbackBytes = await readFile(await fallbackDownload.path());
+  check('no-WebGL static renderer exports a high-resolution Orbital Study PNG', fallbackBytes.subarray(1, 4).toString() === 'PNG' && fallbackBytes.readUInt32BE(16) === 2200 && fallbackBytes.readUInt32BE(20) === 2200 && fallbackBytes.length > 50_000 && await fallbackPage.getByTestId('static-scene').isVisible(), { bytes: fallbackBytes.length });
+  await shot(fallbackPage, 'desktop-static-share');
   await fallbackContext.close();
 
   const errorContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });

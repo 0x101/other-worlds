@@ -5,6 +5,7 @@
 - **Manrope:** Copyright 2019 The Manrope Project Authors; SIL Open Font License 1.1. Distributed locally through Fontsource.
 - **Three.js:** MIT License, Three.js authors.
 - **Lucide icons:** ISC License.
+- **QRCode / node-qrcode:** Copyright 2012 Ryan Day; MIT License. Generates local QR images containing exact reopen links.
 - **React, Vite, TypeScript, Vitest, Playwright, and other dependencies:** their respective licenses in the installed packages and lockfile.
 
 All stars, orbital lines, planet surfaces, atmospheric textures, fallback art, and the favicon are generated in code. No third-party planet artwork, NASA logo, or external image asset is shipped.

@@ -30,6 +30,16 @@ Four captured passes are retained under `evidence/round-1/` through `evidence/ro
 
 Round 4 contains 10 valid production frames with zero console errors, page errors, or failed responses. Its desktop software-Chromium samples are diagnostic only (15–20 FPS in the close portrait; 46 FPS in the atlas), not physical-device measurements. Mobile captures use the low-power geometry path.
 
+## Share compositions
+
+Share is a focused dialog over the current world, not another destination. It offers three finished layouts without customization controls:
+
+- **Portrait:** a tall, artwork-dominant plate with world/host identity, one available measured or transparently derived fact, and restrained provenance.
+- **Field Note:** a split dark/light scientific plate with a small fact set, explicit measured/derived/imagined treatment, attribution, printed reopen link, and QR code.
+- **Orbital Study:** a square system portrait led by the deterministic orbital fingerprint, with real host and sibling values and an adjacent disclosure of log-period radial mapping, eccentricity squash, unknown-value marks, deterministic phases, and compressed scales.
+
+The same near-black green, warm paper, Instrument Serif, Manrope, and fine-line language connects all three. The live preview displays the actual export blob. Portrait and Field Note reuse the selected world recipe and saved camera; Orbital Study reuses the system fingerprint shown in the journey. PNG export is a static 2D renderer, so it does not depend on WebGL or motion.
+
 ## Motion
 
 - View changes use a 1.7 s eased camera interpolation and a brief scene veil.

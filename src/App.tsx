@@ -6,7 +6,9 @@ import SearchPanel from './components/SearchPanel';
 import EvidencePanel from './components/EvidencePanel';
 import WonderPanel from './components/WonderPanel';
 import JourneysPanel from './components/JourneysPanel';
-import type { Catalogue, ExperienceName, JourneyState, PlanetRow, Provenance, TraceabilityCatalogue } from './types';
+import OrbitalFingerprint from './components/OrbitalFingerprint';
+import ShareDialog from './components/ShareDialog';
+import type { Catalogue, ExperienceName, JourneyState, PlanetRow, Provenance, ShareTemplate, TraceabilityCatalogue } from './types';
 import { parseCatalogue } from './lib/catalogue';
 import { parseTraceability, validateTraceability } from './lib/traceability';
 import { DEFAULT_JOURNEY, parseJourney, updateBrowserUrl } from './lib/urlState';
@@ -80,7 +82,7 @@ export default function App() {
   useEffect(() => {
     if (catalogue && journey.planetName && !selected) {
       setToast(`“${journey.planetName}” is not in this catalogue snapshot.`);
-      navigate({ view: 'atlas', planetName: null, experience: 'wonder', evidenceOpen: false }, 'replace');
+      navigate({ view: 'atlas', planetName: null, experience: 'wonder', evidenceOpen: false, shareTemplate: null }, 'replace');
     }
   }, [catalogue, journey.planetName, selected, navigate]);
 
@@ -91,32 +93,35 @@ export default function App() {
   }, [toast]);
 
   function goToAtlas() {
-    navigate({ view: 'atlas', planetName: null, experience: 'wonder', evidenceOpen: false, camera: DEFAULT_JOURNEY.camera });
+    navigate({ view: 'atlas', planetName: null, experience: 'wonder', evidenceOpen: false, shareTemplate: null, camera: DEFAULT_JOURNEY.camera });
   }
 
   function selectPlanet(planet: PlanetRow) {
     setJourneysOpen(false);
-    navigate({ view: 'system', planetName: planet.pl_name, evidenceOpen: false, camera: DEFAULT_JOURNEY.camera });
+    navigate({ view: 'system', planetName: planet.pl_name, experience: 'wonder', evidenceOpen: false, shareTemplate: null, camera: DEFAULT_JOURNEY.camera });
   }
 
   function goBack() {
-    if (journey.view === 'planet') navigate({ view: 'system', experience: journey.experience === 'studio' ? 'wonder' : journey.experience, evidenceOpen: false });
+    if (journey.view === 'planet') navigate({ view: 'system', experience: 'wonder', evidenceOpen: false, shareTemplate: null });
     else goToAtlas();
   }
 
   function openExperience(experience: ExperienceName) {
-    if (experience === 'observatory') navigate({ view: 'planet', experience, evidenceOpen: true });
-    else navigate({ experience, evidenceOpen: false });
+    if (experience === 'observatory') navigate({ view: 'planet', experience, evidenceOpen: true, shareTemplate: null });
+    else navigate({ experience, evidenceOpen: false, shareTemplate: null });
   }
 
-  async function shareView() {
-    updateBrowserUrl(journeyRef.current, 'replace');
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setToast('A link to this exact view is on your clipboard.');
-    } catch {
-      setToast('Clipboard access was blocked. Copy the URL from your address bar.');
-    }
+  function openShare() {
+    if (!selected) return;
+    navigate({ shareTemplate: 'portrait', evidenceOpen: false });
+  }
+
+  function closeShare() {
+    navigate({ shareTemplate: null, evidenceOpen: journeyRef.current.experience === 'observatory' }, 'replace');
+  }
+
+  function changeShareTemplate(shareTemplate: ShareTemplate) {
+    navigate({ shareTemplate, evidenceOpen: false }, 'replace');
   }
 
   return (
@@ -149,7 +154,7 @@ export default function App() {
         </div>
         <nav className="header-actions" aria-label="View actions">
           {selected && <button className="text-button evidence-open" onClick={() => openExperience('observatory')}>Evidence</button>}
-          {selected && <button className="icon-button" onClick={shareView} aria-label="Share this exact view"><Share2 size={18} /></button>}
+          {selected && <button className="icon-button" onClick={openShare} aria-label="Share this world"><Share2 size={18} /></button>}
           {provenance && <a className="source-link" href={provenance.sourceUrl} target="_blank" rel="noreferrer">NASA / TAP <ArrowUpRight size={14} /></a>}
         </nav>
       </header>
@@ -182,14 +187,7 @@ export default function App() {
             <div className="catalogue-count"><strong>{catalogue.planets.length.toLocaleString('en-US')}</strong> worlds <span /> <strong>{catalogue.systems.size.toLocaleString('en-US')}</strong> systems</div>
             <button className="journeys-open text-button" onClick={() => setJourneysOpen(true)}><BookOpen size={15} />Follow a curated journey</button>
           </section>
-          <SearchPanel
-            catalogue={catalogue}
-            query={journey.query}
-            filter={journey.filter}
-            onQuery={(query) => navigate({ query }, 'replace')}
-            onFilter={(filter) => navigate({ filter }, 'replace')}
-            onSelect={selectPlanet}
-          />
+          <SearchPanel catalogue={catalogue} query={journey.query} filter={journey.filter} onQuery={(query) => navigate({ query }, 'replace')} onFilter={(filter) => navigate({ filter }, 'replace')} onSelect={selectPlanet} />
           <div className="atlas-hint"><span className="mouse-mark" />Drag to orbit · Scroll to travel<br /><small>Select a light or find a world</small></div>
         </>
       )}
@@ -205,11 +203,7 @@ export default function App() {
             </nav>
             <span className="section-label">{journey.view === 'planet' ? `${world.kindLabel} / DERIVED CLASS` : `${siblings.length} CATALOGUED ${siblings.length === 1 ? 'WORLD' : 'WORLDS'} / ${selected.hostname}`}</span>
             <h1>{journey.view === 'planet' ? selected.pl_name : selected.hostname}</h1>
-            {journey.view === 'system' ? (
-              <p>Now inspecting <strong>{selected.pl_name}</strong><br />{formatValue(selected.sy_dist, 'pc')} from Earth · discovered {formatValue(selected.disc_year)}</p>
-            ) : (
-              <p>A portrait shaped by evidence.<br />A world that remains, in part, imagined.</p>
-            )}
+            {journey.view === 'system' ? <p>Now inspecting <strong>{selected.pl_name}</strong><br />{formatValue(selected.sy_dist, 'pc')} from Earth · discovered {formatValue(selected.disc_year)}</p> : <p>A portrait shaped by evidence.<br />A world that remains, in part, imagined.</p>}
             <div className="world-facts">
               <div><span>Radius</span><strong>{formatValue(selected.pl_rade, 'R⊕')}</strong></div>
               <div><span>Equilibrium</span><strong>{formatValue(selected.pl_eqt, 'K', 0)}</strong></div>
@@ -219,17 +213,14 @@ export default function App() {
 
           {journey.view === 'system' && (
             <>
+              <div className="system-fingerprint"><OrbitalFingerprint planets={siblings} /></div>
               <div className="system-actions">
-                <button className="primary-button" onClick={() => navigate({ view: 'planet', camera: DEFAULT_JOURNEY.camera, evidenceOpen: false })}>
-                  Approach {selected.pl_name} <ArrowRight size={18} />
-                </button>
+                <button className="primary-button" onClick={() => navigate({ view: 'planet', camera: DEFAULT_JOURNEY.camera, evidenceOpen: false, shareTemplate: null })}>Approach {selected.pl_name} <ArrowRight size={18} /></button>
                 <span>Orbital scales compressed · phases illustrative</span>
               </div>
               <div className="sibling-rail" aria-label={`Worlds in the ${selected.hostname} system`}>
                 {siblings.map((planet) => (
-                  <button key={planet.pl_name} className={planet.pl_name === selected.pl_name ? 'active' : ''} aria-pressed={planet.pl_name === selected.pl_name} onClick={() => selectPlanet(planet)}>
-                    <span style={{ background: generateWorld(planet).palette[1] }} />{planet.pl_name.replace(selected.hostname, '').trim() || planet.pl_name}
-                  </button>
+                  <button key={planet.pl_name} className={planet.pl_name === selected.pl_name ? 'active' : ''} aria-pressed={planet.pl_name === selected.pl_name} onClick={() => selectPlanet(planet)}><span style={{ background: generateWorld(planet).palette[1] }} />{planet.pl_name.replace(selected.hostname, '').trim() || planet.pl_name}</button>
                 ))}
               </div>
             </>
@@ -240,26 +231,22 @@ export default function App() {
           {journey.view === 'planet' && (
             <div className="planet-actions">
               <button className="primary-button" onClick={() => openExperience('observatory')}>Inspect the evidence <ArrowRight size={18} /></button>
-              <button className="text-button" onClick={shareView}><Share2 size={16} />Share this view</button>
+              <button className="text-button" onClick={openShare}><Share2 size={16} />Share this world</button>
               <span>Illustrative {world.surface === 'terrain' ? 'terrain' : 'atmosphere'} · seed {world.seed}</span>
             </div>
           )}
         </>
       )}
 
+      {catalogue && provenance && selected && journey.shareTemplate && (
+        <ShareDialog planet={selected} siblings={siblings} journey={journey} provenance={provenance} template={journey.shareTemplate} onTemplateChange={changeShareTemplate} onClose={closeShare} />
+      )}
       {catalogue && provenance && traceability && traceProvenance && selected && journey.evidenceOpen && (
-        <EvidencePanel
-          planet={selected}
-          catalogue={catalogue}
-          provenance={provenance}
-          traceProvenance={traceProvenance}
-          trace={traceability.byName.get(selected.pl_name) ?? null}
-          onClose={() => navigate({ experience: 'wonder', evidenceOpen: false }, 'replace')}
-        />
+        <EvidencePanel planet={selected} catalogue={catalogue} provenance={provenance} traceProvenance={traceProvenance} trace={traceability.byName.get(selected.pl_name) ?? null} onClose={() => navigate({ experience: 'wonder', evidenceOpen: false, shareTemplate: null }, 'replace')} />
       )}
       {catalogue && journeysOpen && <JourneysPanel catalogue={catalogue} onSelect={selectPlanet} onClose={() => setJourneysOpen(false)} />}
 
-      {sceneFailed && <div className="fallback-notice" role="status">3D is unavailable. Still reconstructions are active; the full journey remains accessible.</div>}
+      {sceneFailed && !journey.shareTemplate && <div className="fallback-notice" role="status">3D is unavailable. Still reconstructions are active; the full journey remains accessible.</div>}
       {toast && <div className="toast" role="status">{toast}</div>}
       <div key={`${journey.view}-${selected?.pl_name ?? 'atlas'}`} className="journey-wipe" aria-hidden="true" />
     </main>

@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-26T15:27:27.211Z",
+  "validatedAt": "2026-11-26T16:58:17.202Z",
   "mode": "preview",
   "baseUrl": "http://127.0.0.1:7100",
   "checks": [
@@ -94,20 +94,119 @@
       "details": null
     },
     {
-      "name": "share copies the exact current URL",
-      "pass": true,
-      "details": {
-        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=0.000&el=0.080",
-        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=0.000&el=0.080"
-      }
-    },
-    {
-      "name": "camera interaction updates useful URL state",
+      "name": "direct camera manipulation remains on the world canvas and updates URL state",
       "pass": true,
       "details": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121"
     },
     {
       "name": "deep link reopens the same world and camera",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Studio is absent as a destination and no manual designer controls remain",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Share PNG failure is explicit and recoverable",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Share opens as a contextual dialog with a live Portrait preview",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Share offers exactly three finished templates and no customization sliders",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "portrait: copy exact link preserves world, camera, and template",
+      "pass": true,
+      "details": {
+        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=portrait",
+        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=portrait"
+      }
+    },
+    {
+      "name": "portrait: actual high-resolution PNG download has correct dimensions and content",
+      "pass": true,
+      "details": {
+        "bytes": 2747339,
+        "filename": "trappist-1-e-portrait.png",
+        "width": 1800,
+        "height": 2250
+      }
+    },
+    {
+      "name": "field-note: copy exact link preserves world, camera, and template",
+      "pass": true,
+      "details": {
+        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=field-note",
+        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=field-note"
+      }
+    },
+    {
+      "name": "field-note: actual high-resolution PNG download has correct dimensions and content",
+      "pass": true,
+      "details": {
+        "bytes": 1122016,
+        "filename": "trappist-1-e-field-note.png",
+        "width": 2400,
+        "height": 1800
+      }
+    },
+    {
+      "name": "orbital-study: copy exact link preserves world, camera, and template",
+      "pass": true,
+      "details": {
+        "clipboard": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=orbital-study",
+        "current": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121&share=orbital-study"
+      }
+    },
+    {
+      "name": "orbital-study: actual high-resolution PNG download has correct dimensions and content",
+      "pass": true,
+      "details": {
+        "bytes": 543156,
+        "filename": "trappist-1-e-orbital-study.png",
+        "width": 2200,
+        "height": 2200
+      }
+    },
+    {
+      "name": "Share closes with Escape back to the same world and camera",
+      "pass": true,
+      "details": {
+        "before": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121",
+        "after": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&q=TRAPPIST-1+e&az=-0.116&el=0.121"
+      }
+    },
+    {
+      "name": "closing Share restores trigger focus",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "exact copied link reopens Share with its selected template",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "legacy Studio deep link migrates to Portrait with no designer controls",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "migrated exact link removes all legacy Studio parameters",
+      "pass": true,
+      "details": "http://127.0.0.1:7100/?planet=TRAPPIST-1+e&view=planet&az=0.000&el=0.080&share=portrait"
+    },
+    {
+      "name": "system view contains a seven-world orbital fingerprint",
       "pass": true,
       "details": null
     },
@@ -178,6 +277,26 @@
       }
     },
     {
+      "name": "mobile Share: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      }
+    },
+    {
+      "name": "mobile Share keeps templates and export tappable without sliders",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "blocked clipboard selects the exact link for manual recovery",
+      "pass": true,
+      "details": null
+    },
+    {
       "name": "mobile evidence: no page overflow",
       "pass": true,
       "details": {
@@ -228,6 +347,18 @@
       "details": null
     },
     {
+      "name": "reduced-motion Share dialog has no animation",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "reduced-motion exports a full-resolution Field Note PNG",
+      "pass": true,
+      "details": {
+        "bytes": 1176968
+      }
+    },
+    {
       "name": "no-WebGL fallback renders a still reconstruction",
       "pass": true,
       "details": null
@@ -241,6 +372,13 @@
       "name": "fallback retains evidence inspection",
       "pass": true,
       "details": null
+    },
+    {
+      "name": "no-WebGL static renderer exports a high-resolution Orbital Study PNG",
+      "pass": true,
+      "details": {
+        "bytes": 542832
+      }
     },
     {
       "name": "catalogue failure shows an explicit error state",
@@ -281,19 +419,19 @@
       "ready": true,
       "view": "atlas",
       "planet": null,
-      "fps": 48,
+      "fps": 35,
       "drawCalls": 7,
       "triangles": 2,
       "systems": 4865,
       "planets": 6473,
       "resources": 11,
-      "transferBytes": 1693719
+      "transferBytes": 1701985
     },
     "planet": {
       "ready": true,
       "view": "planet",
       "planet": "TRAPPIST-1 e",
-      "fps": 17,
+      "fps": 22,
       "drawCalls": 5,
       "triangles": 26498,
       "systems": 4865,
@@ -306,13 +444,21 @@
     "desktop-gas-giant-reduced-motion.png",
     "desktop-journeys.png",
     "desktop-planet.png",
+    "desktop-share-field-note.png",
+    "desktop-share-orbital-study.png",
+    "desktop-share-portrait.png",
     "desktop-static-fallback.png",
+    "desktop-static-share.png",
     "desktop-system.png",
     "mobile-atlas.png",
     "mobile-evidence.png",
     "mobile-planet.png",
+    "mobile-share.png",
     "responsive-1024-atlas.png",
-    "responsive-768-atlas.png"
+    "responsive-768-atlas.png",
+    "share-trappist-1-e-field-note.png",
+    "share-trappist-1-e-orbital-study.png",
+    "share-trappist-1-e-portrait.png"
   ],
   "passed": true
 }

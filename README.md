@@ -2,7 +2,7 @@
 
 A locally runnable, cinematic exoplanet field atlas built with React, TypeScript, Vite, and Three.js. The included snapshot contains **6,473 unique planets in 4,865 systems** from the NASA Exoplanet Archive `pscomppars` table.
 
-The central journey is continuous: observed-sky atlas → real planetary system → procedural planet portrait → evidence inspector → exact shareable URL.
+The central journey is continuous: observed-sky atlas → real planetary system → procedural planet portrait → Wonder / Observatory → focused Share sheet with an exact reopen link and finished PNG.
 
 ## Run
 
@@ -52,17 +52,18 @@ A refresh replaces the snapshot with a new full real response and refuses suspic
 - Select a result or 3D target, choose a sibling world, then approach the planet.
 - Wonder gives concise, evidence-bound explanations; three curated journeys resolve only real catalogue entries.
 - Observatory separates **MEASURED** archive-reported fields, **DERIVED** app calculations, and **IMAGINED** reconstruction, with source uncertainties, publications, raw exports, and dialog focus management.
-- URLs preserve planet, view, interpretation mode, search/filter, evidence state, and planet-camera angles. Share copies the current URL.
-- Reduced-motion, low-power rendering, static no-WebGL reconstructions, loading, empty, and retryable data-error states are included.
+- URLs preserve planet, view, interpretation mode, search/filter, evidence state, camera angles, and the selected Share template. Legacy standalone Studio links migrate to Portrait Share without restoring designer controls.
+- Share opens a context-preserving dialog with three finished templates: **Portrait**, **Field Note**, and **Orbital Study**. Each has a live preview, exact-link copy with manual fallback, a real high-resolution PNG download, and a QR reopen link.
+- Portrait and Field Note use deterministic static artwork; Orbital Study uses real host/sibling data and the deterministic orbital fingerprint. Missing values are omitted, and visual compression/derivation rules are disclosed.
+- Raw JSON/CSV exports remain in Observatory; direct camera manipulation remains on the world canvas. Share has no sliders or template customization.
+- Reduced-motion, low-power rendering, static no-WebGL reconstructions/export, loading, empty, clipboard fallback, PNG retry, and retryable data-error states are included.
 
 ## Documentation
 
-- [Product vision and scope](docs/PRODUCT.md)
-- [Visual and motion system](docs/DESIGN.md)
+- [Visual, motion, and Share system](docs/DESIGN.md)
 - [Data provenance, field mapping, and evidence rules](docs/DATA.md)
-- [Architecture and URL state](docs/ARCHITECTURE.md)
+- [Architecture, exports, and URL state](docs/ARCHITECTURE.md)
 - [Validation results and limitations](docs/VALIDATION.md)
-- [Prioritized roadmap](docs/ROADMAP.md)
 - [Credits](CREDITS.md)
 
 This is a vertical slice, not an ephemeris, habitability assessment, or observed surface atlas. Planet surfaces, clouds, atmospheric color/thickness, orbital phases, and some layout fallbacks are explicitly illustrative.
