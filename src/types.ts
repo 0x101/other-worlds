@@ -139,4 +139,9 @@ export interface WorldRecipe {
   axialTilt: number;
   rotationSeconds: number;
   temperatureBand: string;
+  paletteVariant: number;
+  cloudCover: number;
+  relief: number;
+  storminess: number;
+  heat: number;
 }

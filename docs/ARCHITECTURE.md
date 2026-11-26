@@ -12,7 +12,7 @@ React 19 + TypeScript + Vite for the static application; Three.js and OrbitContr
 - `src/lib/traceability.ts`: strict raw/columnar companion parsing, publication-link sanitization, asymmetric uncertainty formatting, and base/companion integrity checks.
 - `src/lib/exports.ts`: exact source-record JSON/CSV generation and browser downloads; nulls and source precision are preserved.
 - `src/lib/urlState.ts`: parsing, validation, clamping, serialization, and history updates.
-- `src/components/Scene.tsx`: one persistent renderer, scene rebuilding per view, camera transitions, 3D picking, resizing, disposal, and render metrics.
+- `src/components/Scene.tsx`: one persistent renderer, class-specific procedural surface/cloud shaders, directional and relief-sensitive lighting, normalized portrait framing, outgoing-scene crossfades, interruptible camera transitions, 3D picking, resizing, disposal, and render metrics.
 - `src/components/StaticScene.tsx`: SVG/CSS fallback views using the same real data and recipes.
 - `src/App.tsx`: data loading/integrity check, journey state, navigation, sharing, responsive DOM, and fallback selection.
 - `scripts/fetch-catalogue.mjs`: direct TAP download with sanity checks and complete provenance.
@@ -44,4 +44,4 @@ For validation only, `window.__OTHER_WORLDS__` exposes scene readiness, view, co
 
 ## Build shape
 
-Vite emits a portable static `dist/` with `base: './'`. Fonts and data are local. The main JavaScript bundle is currently about 783 kB minified (214 kB gzip) because Three.js and the shader renderer ship in the initial chunk; code splitting is a roadmap item, not a hidden optimization claim.
+Vite emits a portable static `dist/` with `base: './'`. Fonts and data are local. The main JavaScript bundle is currently 797.46 kB minified (217.93 kB gzip) because Three.js and the shader renderer ship in the initial chunk; code splitting remains hardening work, not a hidden optimization claim.

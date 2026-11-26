@@ -1,6 +1,6 @@
 # Validation results
 
-Scientific-checkpoint production-preview validation completed at `2026-11-26T08:09:28.912Z`. The machine-readable sources of truth are `evidence/browser-report.json` and `evidence/data-report.json`; the screenshots listed below are committed evidence, not design mockups.
+Cinematic-checkpoint production-preview validation completed at `2026-11-26T09:01:09.744Z` after the final shader refinement. The machine-readable sources of truth are `evidence/browser-report.json`, `evidence/data-report.json`, and the reference-capture manifests; the screenshots listed below are committed evidence, not design mockups.
 
 ## Automated checks
 
@@ -13,7 +13,7 @@ Scientific-checkpoint production-preview validation completed at `2026-11-26T08:
   - Raw JSON/CSV source export, CSV escaping, and null preservation.
   - URL round trips, malformed values, camera clamps, and evidence-state rules.
 - **Data integrity:** 6,473 parsed rows match provenance; 6,473 unique planet identifiers and 4,865 systems. The preserved base SHA-256 matches `6bcd8b57…cb362`. All **84,149** base/companion measurement comparisons and **440,164** raw/normalized cell comparisons passed across 2,321 shared publication references.
-- **Production build:** TypeScript `--noEmit` and Vite build passed. Vite reports a large-chunk warning for the approximately 783 kB minified main bundle; this is documented rather than suppressed.
+- **Production build:** TypeScript `--noEmit` and Vite build passed. Vite reports a large-chunk warning for the 797.46 kB minified main bundle (217.93 kB gzip); this is documented rather than suppressed.
 - **CLI:** `npm run dev -- --help` reached Vite and displayed its `--host`, `--port`, and `--strictPort` options, confirming argument forwarding. Node.js 24.22.1 was used.
 
 ## Real-browser release gate
@@ -52,7 +52,7 @@ The images were opened and visually inspected after capture. Fixes made during t
 
 ## Performance observations
 
-The final software-rendered headless sample reported 44 FPS and 6 draw calls in the atlas, and 22 FPS and 4 draw calls in the close planet view (26,498 triangles). The atlas sample recorded 9 resource entries and 943,300 transfer bytes at capture time. These are diagnostic observations from one headless environment, **not physical-device frame-rate or network benchmarks**. The raw JSON snapshot is approximately 4.8 MiB on disk.
+The cinematic-checkpoint software-rendered headless sample reported 43 FPS and 7 draw calls in the atlas, and 26 FPS and 5 draw calls in the close planet view (26,498 triangles). The atlas sample recorded 11 resource entries and 1,690,701 transfer bytes at capture time. Separate reference captures ranged from 15–20 FPS for desktop close portraits and 46–50 FPS for mobile/atlas views. These are diagnostic observations from one headless environment, **not physical-device frame-rate or network benchmarks**. The raw JSON snapshot is approximately 4.8 MiB on disk.
 
 ## Known limitations
 

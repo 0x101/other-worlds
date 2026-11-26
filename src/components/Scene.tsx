@@ -47,6 +47,10 @@ const fragmentShader = `
   uniform float uNoiseScale;
   uniform float uBandCount;
   uniform float uSeed;
+  uniform float uCloudCover;
+  uniform float uRelief;
+  uniform float uStorminess;
+  uniform float uHeat;
   uniform int uSurface;
   varying vec3 vObjectPosition;
   varying vec3 vWorldNormal;
@@ -80,31 +84,71 @@ const fragmentShader = `
     vec3 p = normalize(vObjectPosition);
     vec3 offset = vec3(uSeed * 0.000013, uSeed * 0.000021, uSeed * 0.000008);
     float broad = fbm(p * uNoiseScale + offset);
-    float fine = fbm(p * uNoiseScale * 3.1 - offset);
+    float fine = fbm(p * uNoiseScale * 3.4 - offset);
+    float height = broad;
     vec3 albedo;
+    vec3 emission = vec3(0.0);
     if (uSurface == 0) {
-      float provinces = smoothstep(0.34, 0.72, broad);
-      albedo = mix(uColorA, uColorB, provinces);
-      albedo = mix(albedo, uColorC, smoothstep(0.69, 0.94, fine) * 0.72);
-      float ridges = abs(noise3(p * 18.0 + offset) - 0.5);
-      albedo *= 0.88 + ridges * 0.3;
+      float warp = fbm(p * 2.2 + offset * 0.37);
+      float provinces = fbm(p * uNoiseScale + vec3(warp * 0.72) + offset);
+      float ridges = 1.0 - abs(2.0 * noise3(p * 24.0 + offset) - 1.0);
+      height = provinces * 0.76 + fine * 0.18 + ridges * 0.06;
+      albedo = mix(uColorA, uColorB, smoothstep(0.3, 0.68, provinces));
+      albedo = mix(albedo, uColorC, smoothstep(0.67, 0.91, fine) * 0.38);
+      albedo *= 0.76 + ridges * 0.36;
+      float fracture = pow(1.0 - abs(2.0 * fbm(p * 8.0 + offset) - 1.0), 22.0);
+      float lava = fracture * smoothstep(0.35, 0.82, uHeat) * smoothstep(0.58, 0.78, broad);
+      albedo = mix(albedo, uColorC * 1.12, lava * 0.24);
+      emission = uColorC * lava * uHeat * 0.38;
     } else if (uSurface == 1 || uSurface == 3) {
-      float turbulence = fbm(vec3(p.x * 2.0, p.y * 7.0, p.z * 2.0) + offset);
-      float frequency = uSurface == 3 ? uBandCount * 0.42 : uBandCount;
-      float bands = sin((p.y + (turbulence - 0.5) * 0.14) * frequency * 3.14159);
-      albedo = mix(uColorA, uColorB, bands * 0.5 + 0.5);
-      albedo = mix(albedo, uColorC, smoothstep(0.66, 0.96, fine) * (uSurface == 3 ? 0.18 : 0.52));
+      float flow = fbm(vec3(p.x * 3.0, p.y * 2.2, p.z * 3.0) + offset);
+      float streaks = fbm(vec3(p.x * 7.0, p.y * 30.0, p.z * 7.0) - offset);
+      float ice = uSurface == 3 ? 1.0 : 0.0;
+      float distortion = mix(0.72, 0.12, ice) * (0.65 + uStorminess * 0.65);
+      float bands = sin((p.y + (flow - 0.5) * distortion + (broad - 0.5) * 0.14) * uBandCount * 6.28318);
+      float bandMask = smoothstep(-1.15, 1.15, bands + (streaks - 0.5) * 0.68);
+      albedo = mix(uColorA, uColorB, 0.32 + bandMask * 0.54);
+      albedo = mix(albedo, uColorC, smoothstep(0.62, 0.94, fine) * mix(0.24, 0.14, ice));
+      vec3 stormCenter = normalize(vec3(0.48, -0.2 + uStorminess * 0.42, 0.82));
+      float stormDistance = length((p - stormCenter) * vec3(1.15, 3.3, 1.15)) + (flow - 0.5) * 0.045;
+      float storm = (1.0 - smoothstep(0.035, 0.32, stormDistance)) * (1.0 - ice) * (0.38 + uStorminess * 0.62);
+      float stormBands = 0.82 + streaks * 0.3 + 0.05 * sin(stormDistance * 75.0 + streaks * 4.0);
+      albedo = mix(albedo, uColorC * stormBands * (0.9 + streaks * 0.3), storm * 0.42);
+      height = bandMask * 0.28 + streaks * 0.36 + storm * 0.12;
     } else {
-      float clouds = smoothstep(0.28, 0.82, broad + fine * 0.2);
-      albedo = mix(uColorA, uColorB, clouds);
-      albedo = mix(albedo, uColorC, smoothstep(0.7, 1.0, fine) * 0.48);
+      float billow = fbm(p * uNoiseScale * 1.15 + vec3(broad * 0.55) + offset);
+      float cloudMask = smoothstep(0.64 - uCloudCover * 0.18, 0.91 - uCloudCover * 0.08, billow + fine * 0.1);
+      if (uSurface == 4) {
+        float current = fbm(vec3(p.x * 4.2, p.y * 12.0, p.z * 4.2) + offset);
+        float folds = fbm(p * uNoiseScale * 1.8 + vec3(current * 0.9, broad * 0.4, current * 0.6));
+        float deck = smoothstep(0.25, 0.74, folds + current * 0.18);
+        albedo = mix(uColorA * 0.64, uColorB * 0.86, deck);
+        albedo = mix(albedo, uColorC * (0.62 + current * 0.24), cloudMask * (0.52 + current * 0.2));
+        albedo *= 0.82 + fine * 0.32;
+        height = deck * 0.38 + cloudMask * 0.4 + fine * 0.12;
+      } else if (uSurface == 5) {
+        float veil = smoothstep(0.3, 0.78, broad + fine * 0.16);
+        albedo = mix(uColorA * 0.7, uColorB * 0.72, veil);
+        albedo = mix(albedo, uColorC * 0.76, cloudMask * 0.38);
+        height = veil * 0.24 + cloudMask * 0.18;
+      } else {
+        float veil = smoothstep(0.32, 0.76, broad);
+        albedo = mix(uColorA * 0.7, uColorB * 0.88, veil);
+        albedo = mix(albedo, uColorC * 0.92, cloudMask * 0.68);
+        albedo *= 0.84 + fine * 0.28;
+        height = cloudMask * 0.5 + fine * 0.18;
+      }
     }
-    vec3 normal = normalize(vWorldNormal);
-    float diffuse = max(dot(normal, normalize(uLightDirection)), 0.0);
-    float wrapped = max(dot(normal, normalize(uLightDirection)) * 0.72 + 0.28, 0.0);
-    float light = 0.075 + mix(diffuse, wrapped, 0.24) * uIllumination;
-    float rim = pow(1.0 - max(dot(normal, normalize(vViewDirection)), 0.0), 3.0);
-    vec3 color = albedo * light * uLightColor + uColorB * rim * 0.075;
+    vec3 geometricNormal = normalize(vWorldNormal);
+    float reliefWeight = uSurface == 0 ? uRelief * 1.35 : (uSurface == 1 ? 0.08 : 0.035);
+    vec3 normal = normalize(geometricNormal + vec3(dFdx(height), dFdy(height), 0.0) * reliefWeight);
+    float ndl = dot(normal, normalize(uLightDirection));
+    float geometricLight = dot(geometricNormal, normalize(uLightDirection));
+    float terminator = smoothstep(-0.16, 0.3, geometricLight);
+    float diffuse = max(ndl, 0.0);
+    float light = 0.035 + terminator * (0.21 + diffuse * 0.92) * uIllumination;
+    float rim = pow(1.0 - max(dot(geometricNormal, normalize(vViewDirection)), 0.0), 4.0);
+    vec3 color = albedo * light * uLightColor + uColorB * rim * 0.035 + emission;
     gl_FragColor = vec4(color, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -125,11 +169,13 @@ const atmosphereVertex = `
 const atmosphereFragment = `
   uniform vec3 uColor;
   uniform float uStrength;
+  uniform vec3 uLightDirection;
   varying vec3 vNormal;
   varying vec3 vView;
   void main() {
-    float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 2.6);
-    gl_FragColor = vec4(uColor, fresnel * uStrength);
+    float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 3.2);
+    float illumination = 0.1 + 0.9 * smoothstep(-0.35, 0.55, dot(normalize(vNormal), normalize(uLightDirection)));
+    gl_FragColor = vec4(uColor, fresnel * uStrength * illumination);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
@@ -171,6 +217,7 @@ class WorldEngine {
   private camera = new THREE.PerspectiveCamera(46, 1, 0.1, 500);
   private controls: OrbitControls;
   private content = new THREE.Group();
+  private departing: { group: THREE.Group; started: number }[] = [];
   private currentView: ViewName = 'atlas';
   private currentPlanet: PlanetRow | null = null;
   private catalogue: Catalogue;
@@ -182,6 +229,7 @@ class WorldEngine {
   private pointer = new THREE.Vector2();
   private pointerStart = new THREE.Vector2();
   private resizeObserver: ResizeObserver;
+  private planetDistance = 7.4;
   private transition: { started: number; from: THREE.Vector3; to: THREE.Vector3; targetFrom: THREE.Vector3; targetTo: THREE.Vector3 } | null = null;
   private ready = false;
   private frameCount = 0;
@@ -196,11 +244,12 @@ class WorldEngine {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, lowPower ? 1 : 1.75));
     this.renderer.setClearColor(0x080d0e, 0);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.02;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.domElement.setAttribute('aria-hidden', 'true');
     this.renderer.domElement.tabIndex = -1;
     container.appendChild(this.renderer.domElement);
+    this.scene.fog = new THREE.FogExp2(0x080d0e, 0.0065);
     this.scene.add(this.content);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = !reducedMotion;
@@ -210,6 +259,7 @@ class WorldEngine {
     this.controls.maxDistance = 80;
     this.controls.rotateSpeed = 0.45;
     this.controls.zoomSpeed = 0.65;
+    this.controls.addEventListener('start', () => { this.transition = null; });
     this.controls.addEventListener('end', () => this.emitCamera());
     this.camera.position.set(0, 7, 44);
     this.controls.target.set(0, 0, 0);
@@ -272,27 +322,44 @@ class WorldEngine {
   }
 
   setView(view: ViewName, planet: PlanetRow | null): void {
+    const instant = this.reducedMotion || !this.ready;
+    const previous = this.content;
+    this.scene.remove(previous);
+    if (instant || !previous.children.length) disposeGroup(previous);
+    else {
+      previous.traverse((object) => {
+        if (!(object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.Line)) return;
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.forEach((material) => {
+          material.userData.journeyOpacity = material.opacity;
+          material.transparent = true;
+          material.depthWrite = false;
+        });
+      });
+      this.scene.add(previous);
+      this.departing.push({ group: previous, started: performance.now() });
+    }
+    this.content = new THREE.Group();
+    this.scene.add(this.content);
     this.currentView = view;
     this.currentPlanet = planet;
-    disposeGroup(this.content);
     this.controls.autoRotate = view === 'atlas' && !this.reducedMotion;
-    this.controls.autoRotateSpeed = 0.16;
+    this.controls.autoRotateSpeed = 0.12;
     this.controls.enableZoom = true;
     this.controls.minDistance = view === 'planet' ? 4.8 : view === 'system' ? 12 : 20;
-    this.controls.maxDistance = view === 'planet' ? 14 : view === 'system' ? 58 : 80;
+    this.controls.maxDistance = view === 'planet' ? 20 : view === 'system' ? 58 : 80;
     let destination = new THREE.Vector3(0, 7, 44);
-    let target = new THREE.Vector3(0, 0, 0);
+    const target = new THREE.Vector3(0, 0, 0);
     if (view === 'atlas') this.buildAtlas();
     else if (view === 'system' && planet) {
       this.buildSystem(planet);
       destination = new THREE.Vector3(0, 18, 33);
     } else if (view === 'planet' && planet) {
       this.buildPlanet(planet);
-      destination = new THREE.Vector3(0, 0.6, 7.4);
-      target = new THREE.Vector3(0.5, 0, 0);
+      destination = new THREE.Vector3(0, 0.45, this.planetDistance);
       this.controls.enableZoom = false;
     }
-    if (this.reducedMotion || !this.ready) {
+    if (instant) {
       this.camera.position.copy(destination);
       this.controls.target.copy(target);
       this.transition = null;
@@ -306,34 +373,40 @@ class WorldEngine {
     const systems = [...this.catalogue.systems.values()];
     const positions = new Float32Array(systems.length * 3);
     const colors = new Float32Array(systems.length * 3);
+    const multiplePositions: number[] = [];
     const names: string[] = [];
     systems.forEach((siblings, index) => {
       const representative = siblings[0];
       const point = skyPosition(representative);
       positions.set([point.x, point.y, point.z], index * 3);
+      if (siblings.length > 1) multiplePositions.push(point.x, point.y, point.z);
       const world = generateWorld(representative);
-      const color = new THREE.Color(world.starColor).lerp(new THREE.Color(0xaebbb1), 0.42);
+      const color = new THREE.Color(world.starColor).lerp(new THREE.Color(0xaebbb1), 0.48);
       colors.set([color.r, color.g, color.b], index * 3);
       names.push(representative.hostname);
     });
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    const material = new THREE.PointsMaterial({ size: 0.52, map: this.spriteTexture, vertexColors: true, transparent: true, opacity: 0.92, alphaTest: 0.02, depthWrite: false, blending: THREE.AdditiveBlending });
+    const material = new THREE.PointsMaterial({ size: 0.42, map: this.spriteTexture, vertexColors: true, transparent: true, opacity: 0.96, alphaTest: 0.035, depthWrite: false, blending: THREE.NormalBlending });
     const points = new THREE.Points(geometry, material);
     points.userData.systems = names;
     this.content.add(points);
-    for (const radius of [15, 24, 33]) {
+    const multipleGeometry = new THREE.BufferGeometry();
+    multipleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(multiplePositions, 3));
+    const multiples = new THREE.Points(multipleGeometry, new THREE.PointsMaterial({ size: 0.9, map: this.spriteTexture, color: 0xc5b18c, transparent: true, opacity: 0.21, alphaTest: 0.02, depthWrite: false, blending: THREE.AdditiveBlending }));
+    this.content.add(multiples);
+    [15, 24, 33].forEach((radius, index) => {
       const curve = new THREE.EllipseCurve(0, 0, radius, radius, 0, Math.PI * 2);
       const line = new THREE.LineLoop(
         new THREE.BufferGeometry().setFromPoints(curve.getPoints(160).map((point) => new THREE.Vector3(point.x, 0, point.y))),
-        new THREE.LineBasicMaterial({ color: 0x668078, transparent: true, opacity: 0.065 }),
+        new THREE.LineBasicMaterial({ color: 0x789087, transparent: true, opacity: 0.045 }),
       );
-      line.rotation.x = 0.28;
+      line.rotation.set(0.28 + index * 0.17, 0, index * 0.31);
       this.content.add(line);
-    }
-    const home = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.spriteTexture, color: 0xe5c49a, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
-    home.scale.setScalar(1.25);
+    });
+    const home = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.spriteTexture, color: 0xe5c49a, transparent: true, opacity: 0.64, depthWrite: false, blending: THREE.AdditiveBlending }));
+    home.scale.setScalar(0.78);
     this.content.add(home);
   }
 
@@ -382,8 +455,10 @@ class WorldEngine {
 
   private buildPlanet(planet: PlanetRow): void {
     const world = generateWorld(planet);
+    this.planetDistance = world.displayRadius * (this.container.clientWidth < 700 ? 4.8 : 3.85);
     const geometry = new THREE.SphereGeometry(world.displayRadius, this.lowPower ? 56 : 112, this.lowPower ? 36 : 80);
-    const surfaceValue = { terrain: 0, bands: 1, clouds: 2, 'ice-bands': 3 }[world.surface];
+    const surfaceValue = world.kind === 'sub-neptune' ? 4 : world.kind === 'unknown' ? 5 : { terrain: 0, bands: 1, clouds: 2, 'ice-bands': 3 }[world.surface];
+    const lightColor = new THREE.Color(world.starColor).lerp(new THREE.Color(0xfff4e4), 0.52);
     const material = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
@@ -391,35 +466,52 @@ class WorldEngine {
         uColorA: { value: new THREE.Color(world.palette[0]) },
         uColorB: { value: new THREE.Color(world.palette[1]) },
         uColorC: { value: new THREE.Color(world.palette[2]) },
-        uLightColor: { value: new THREE.Color(world.starColor) },
+        uLightColor: { value: lightColor },
         uLightDirection: { value: new THREE.Vector3(-0.7, 0.38, 0.85).normalize() },
         uIllumination: { value: world.illumination },
         uNoiseScale: { value: world.noiseScale },
         uBandCount: { value: world.bandCount },
         uSeed: { value: world.seed % 100000 },
+        uCloudCover: { value: world.cloudCover },
+        uRelief: { value: world.relief },
+        uStorminess: { value: world.storminess },
+        uHeat: { value: world.heat },
         uSurface: { value: surfaceValue },
       },
     });
     const globe = new THREE.Mesh(geometry, material);
-    globe.position.x = 0.5;
+    globe.name = 'portrait-globe';
+    globe.position.x = this.container.clientWidth < 700 ? 0 : 1.05;
     globe.rotation.z = world.axialTilt;
     globe.rotation.y = (world.seed % 628) / 100;
     this.content.add(globe);
     const atmosphere = new THREE.Mesh(
-      new THREE.SphereGeometry(world.displayRadius * 1.035, this.lowPower ? 48 : 80, this.lowPower ? 32 : 56),
+      new THREE.SphereGeometry(world.displayRadius * 1.025, this.lowPower ? 48 : 80, this.lowPower ? 32 : 56),
       new THREE.ShaderMaterial({
         vertexShader: atmosphereVertex,
         fragmentShader: atmosphereFragment,
-        uniforms: { uColor: { value: new THREE.Color(world.atmosphereColor) }, uStrength: { value: world.atmosphereStrength } },
+        uniforms: {
+          uColor: { value: new THREE.Color(world.atmosphereColor) },
+          uStrength: { value: world.atmosphereStrength },
+          uLightDirection: { value: new THREE.Vector3(-0.7, 0.38, 0.85).normalize() },
+        },
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
         side: THREE.FrontSide,
       }),
     );
+    atmosphere.name = 'portrait-atmosphere';
     atmosphere.position.copy(globe.position);
     this.content.add(atmosphere);
-    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.spriteTexture, color: world.starColor, transparent: true, opacity: 0.14, depthWrite: false, blending: THREE.AdditiveBlending }));
+    const orbitCurve = new THREE.EllipseCurve(0, 0, world.displayRadius * 1.62, world.displayRadius * 1.62, 0.12, Math.PI * 1.55);
+    const orbit = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(orbitCurve.getPoints(180).map((point) => new THREE.Vector3(point.x + globe.position.x, point.y, -world.displayRadius * 0.9))),
+      new THREE.LineBasicMaterial({ color: 0xa6b4a9, transparent: true, opacity: 0.12, depthWrite: false }),
+    );
+    orbit.rotation.z = -0.32;
+    this.content.add(orbit);
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.spriteTexture, color: world.starColor, transparent: true, opacity: 0.1, depthWrite: false, blending: THREE.AdditiveBlending }));
     glow.position.set(-6, 3.4, -3);
     glow.scale.setScalar(8);
     this.content.add(glow);
@@ -427,12 +519,11 @@ class WorldEngine {
 
   setCamera(state: CameraViewState): void {
     if (this.currentView !== 'planet' || this.transition) return;
-    const radius = 7.4;
-    const target = new THREE.Vector3(0.5, 0, 0);
+    const target = new THREE.Vector3(0, 0, 0);
     const desired = new THREE.Vector3(
-      target.x + radius * Math.cos(state.elevation) * Math.sin(state.azimuth),
-      radius * Math.sin(state.elevation),
-      radius * Math.cos(state.elevation) * Math.cos(state.azimuth),
+      this.planetDistance * Math.cos(state.elevation) * Math.sin(state.azimuth),
+      this.planetDistance * Math.sin(state.elevation),
+      this.planetDistance * Math.cos(state.elevation) * Math.cos(state.azimuth),
     );
     if (desired.distanceTo(this.camera.position) > 0.03) {
       this.camera.position.copy(desired);
@@ -456,6 +547,19 @@ class WorldEngine {
     this.camera.fov = width < 700 ? 54 : 46;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    if (this.currentView === 'planet' && this.currentPlanet) {
+      const nextDistance = generateWorld(this.currentPlanet).displayRadius * (width < 700 ? 4.8 : 3.85);
+      if (!this.transition) {
+        const offset = this.camera.position.clone().sub(this.controls.target).multiplyScalar(nextDistance / this.planetDistance);
+        this.camera.position.copy(this.controls.target).add(offset);
+      }
+      this.planetDistance = nextDistance;
+      const centerX = width < 700 ? 0 : 1.05;
+      const globe = this.content.getObjectByName('portrait-globe');
+      const atmosphere = this.content.getObjectByName('portrait-atmosphere');
+      if (globe) globe.position.x = centerX;
+      if (atmosphere) atmosphere.position.x = centerX;
+    }
   }
 
   private animate(): void {
@@ -465,9 +569,22 @@ class WorldEngine {
       const raw = Math.min(1, (now - this.transition.started) / 1700);
       const progress = raw < 0.5 ? 4 * raw ** 3 : 1 - ((-2 * raw + 2) ** 3) / 2;
       this.camera.position.lerpVectors(this.transition.from, this.transition.to, progress);
+      this.camera.position.y += Math.sin(progress * Math.PI) * Math.min(2.2, this.transition.from.distanceTo(this.transition.to) * 0.05);
       this.controls.target.lerpVectors(this.transition.targetFrom, this.transition.targetTo, progress);
       if (raw >= 1) this.transition = null;
     }
+    this.departing = this.departing.filter((departing) => {
+      const opacity = 1 - Math.min(1, (now - departing.started) / 850);
+      departing.group.traverse((object) => {
+        if (!(object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.Line)) return;
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.forEach((material) => { material.opacity = (material.userData.journeyOpacity ?? 1) * opacity; });
+      });
+      if (opacity > 0) return true;
+      this.scene.remove(departing.group);
+      disposeGroup(departing.group);
+      return false;
+    });
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
     this.frameCount += 1;
@@ -499,6 +616,8 @@ class WorldEngine {
     this.controls.dispose();
     this.renderer.domElement.removeEventListener('webglcontextlost', this.contextLost);
     disposeGroup(this.content);
+    this.departing.forEach((departing) => disposeGroup(departing.group));
+    this.departing = [];
     const starfield = this.scene.getObjectByName('persistent-starfield') as THREE.Points | undefined;
     starfield?.geometry.dispose();
     if (starfield?.material instanceof THREE.Material) starfield.material.dispose();

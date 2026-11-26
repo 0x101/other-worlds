@@ -110,4 +110,4 @@ export const FILTER_LABELS: Record<FilterName, string> = {
   nearby: 'Within 50 pc',
 };
 
-export const SUGGESTED_NAMES = ['TRAPPIST-1 e', 'Proxima Centauri b', 'Kepler-1649 c', 'K2-18 b', '55 Cancri e'];
+export const SUGGESTED_NAMES = ['TRAPPIST-1 e', 'Proxima Centauri b', 'Kepler-1649 c', 'K2-18 b', '55 Cnc e'];

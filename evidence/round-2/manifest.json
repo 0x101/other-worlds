@@ -1,0 +1,252 @@
+{
+  "round": "round-2",
+  "capturedAt": "2026-11-26T08:41:43.395Z",
+  "baseUrl": "http://127.0.0.1:7100",
+  "frames": [
+    {
+      "name": "atlas-desktop",
+      "url": "http://127.0.0.1:7100",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      },
+      "metrics": {
+        "ready": true,
+        "view": "atlas",
+        "planet": null,
+        "fps": 44,
+        "drawCalls": 7,
+        "triangles": 2,
+        "systems": 4865,
+        "planets": 6473
+      }
+    },
+    {
+      "name": "atlas-mobile",
+      "url": "http://127.0.0.1:7100",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "dimensions": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      },
+      "metrics": {
+        "ready": true,
+        "view": "atlas",
+        "planet": null,
+        "fps": 51,
+        "drawCalls": 7,
+        "triangles": 2,
+        "systems": 4865,
+        "planets": 6473
+      }
+    },
+    {
+      "name": "trappist-1-e-desktop",
+      "url": "http://127.0.0.1:7100/?planet=TRAPPIST-1%20e&view=planet&az=0&el=0.08",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      },
+      "metrics": {
+        "ready": true,
+        "view": "planet",
+        "planet": "TRAPPIST-1 e",
+        "fps": 20,
+        "drawCalls": 5,
+        "triangles": 26498,
+        "systems": 4865,
+        "planets": 6473
+      }
+    },
+    {
+      "name": "trappist-1-e-mobile",
+      "url": "http://127.0.0.1:7100/?planet=TRAPPIST-1%20e&view=planet&az=0&el=0.08",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "dimensions": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      },
+      "metrics": {
+        "ready": true,
+        "view": "planet",
+        "planet": "TRAPPIST-1 e",
+        "fps": 49,
+        "drawCalls": 5,
+        "triangles": 6898,
+        "systems": 4865,
+        "planets": 6473
+      }
+    },
+    {
+      "name": "55-cnc-e-desktop",
+      "url": "http://127.0.0.1:7100/?planet=55%20Cnc%20e&view=planet&az=0&el=0.08",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      },
+      "metrics": {
+        "ready": true,
+        "view": "planet",
+        "planet": "55 Cnc e",
+        "fps": 22,
+        "drawCalls": 5,
+        "triangles": 26498,
+        "systems": 4865,
+        "planets": 6473
+      }
+    },
+    {
+      "name": "kepler-10-b-desktop",
+      "url": "http://127.0.0.1:7100/?planet=Kepler-10%20b&view=planet&az=0&el=0.08",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      },
+      "metrics": {
+        "ready": true,
+        "view": "planet",
+        "planet": "Kepler-10 b",
+        "fps": 19,
+        "drawCalls": 5,
+        "triangles": 26498,
+        "systems": 4865,
+        "planets": 6473
+      }
+    },
+    {
+      "name": "hd-189733-b-desktop",
+      "url": "http://127.0.0.1:7100/?planet=HD%20189733%20b&view=planet&az=0&el=0.08",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      },
+      "metrics": {
+        "ready": true,
+        "view": "planet",
+        "planet": "HD 189733 b",
+        "fps": 21,
+        "drawCalls": 5,
+        "triangles": 26498,
+        "systems": 4865,
+        "planets": 6473
+      }
+    },
+    {
+      "name": "hd-189733-b-mobile",
+      "url": "http://127.0.0.1:7100/?planet=HD%20189733%20b&view=planet&az=0&el=0.08",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "dimensions": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      },
+      "metrics": {
+        "ready": true,
+        "view": "planet",
+        "planet": "HD 189733 b",
+        "fps": 50,
+        "drawCalls": 5,
+        "triangles": 6898,
+        "systems": 4865,
+        "planets": 6473
+      }
+    },
+    {
+      "name": "k2-18-b-desktop",
+      "url": "http://127.0.0.1:7100/?planet=K2-18%20b&view=planet&az=0&el=0.08",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      },
+      "metrics": {
+        "ready": true,
+        "view": "planet",
+        "planet": "K2-18 b",
+        "fps": 22,
+        "drawCalls": 5,
+        "triangles": 26498,
+        "systems": 4865,
+        "planets": 6473
+      }
+    },
+    {
+      "name": "kic-10001893-b-desktop",
+      "url": "http://127.0.0.1:7100/?planet=KIC%2010001893%20b&view=planet&az=0&el=0.08",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      },
+      "metrics": {
+        "ready": true,
+        "view": "planet",
+        "planet": "KIC 10001893 b",
+        "fps": 21,
+        "drawCalls": 5,
+        "triangles": 26498,
+        "systems": 4865,
+        "planets": 6473
+      }
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedResponses": [],
+  "serverStopped": true,
+  "passed": true
+}

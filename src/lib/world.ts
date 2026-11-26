@@ -37,11 +37,20 @@ function surfaceFor(kind: WorldKind): SurfaceKind {
 }
 
 const PALETTES = {
-  frozen: ['#162f3c', '#527e87', '#b5c9bd'],
-  cold: ['#182c32', '#5d817b', '#b7b49b'],
-  mild: ['#2a2622', '#8e7657', '#c2b591'],
-  hot: ['#2a1916', '#9e4f35', '#d8a565'],
-  extreme: ['#21171a', '#9f4638', '#f0bd79'],
+  frozen: ['#101c24', '#58717a', '#c5d3cb'],
+  cold: ['#192323', '#6f7d6e', '#c9c0a4'],
+  mild: ['#241c18', '#967354', '#dec59b'],
+  hot: ['#241312', '#ad593c', '#e9ae70'],
+  extreme: ['#180d12', '#91453b', '#f4bc79'],
+} as const;
+
+const GAS_PALETTES = {
+  frozen: ['#161a20', '#77766f', '#ddd2b8'],
+  cold: ['#1c1917', '#93816a', '#e2cfac'],
+  mild: ['#211714', '#a66f4b', '#e7c69b'],
+  hot: ['#0c1c2a', '#2e657f', '#b1ced0'],
+  extreme: ['#250f0c', '#b85d37', '#f3c48a'],
+  unknown: ['#191d1e', '#697a75', '#c0c8b9'],
 } as const;
 
 export function generateWorld(planet: PlanetRow): WorldRecipe {
@@ -54,11 +63,23 @@ export function generateWorld(planet: PlanetRow): WorldRecipe {
       : temperature < 320 ? 'cold'
         : temperature < 700 ? 'mild'
           : temperature < 1400 ? 'hot' : 'extreme';
+  const paletteVariant = Math.floor(random() * 4);
   const palette = [...PALETTES[temperatureBand === 'unknown' ? 'cold' : temperatureBand]] as [string, string, string];
-  if (kind === 'ice-giant') {
-    palette[0] = '#122c38'; palette[1] = '#4f8792'; palette[2] = '#b9d4cb';
-  } else if (kind === 'gas-giant' && temperatureBand === 'cold') {
-    palette[0] = '#2a2724'; palette[1] = '#8f8066'; palette[2] = '#d6c6a5';
+  if (kind === 'gas-giant') {
+    const selected = GAS_PALETTES[temperatureBand];
+    palette.splice(0, 3, ...selected);
+  } else if (kind === 'ice-giant') {
+    const icePalettes = [
+      ['#102631', '#438697', '#c1dedd'], ['#111d31', '#486d9b', '#c2d2df'],
+      ['#122a2a', '#4c9087', '#c4ded2'], ['#181f2c', '#607a91', '#cad4d2'],
+    ] as const;
+    palette.splice(0, 3, ...icePalettes[paletteVariant]);
+  } else if (kind === 'sub-neptune' || kind === 'unknown') {
+    if (temperatureBand === 'frozen' || temperatureBand === 'cold') palette.splice(0, 3, '#10252d', '#477d86', '#c5d9d2');
+    if (temperatureBand === 'mild') palette.splice(0, 3, '#171b1b', '#786c57', '#d3c6a9');
+    if (temperatureBand === 'hot') palette.splice(0, 3, '#171716', '#8f6747', '#dcc398');
+    if (temperatureBand === 'extreme') palette.splice(0, 3, '#171113', '#87554c', '#d5a58a');
+    if (kind === 'unknown') palette.splice(0, 3, '#141b1c', '#41544f', '#8b9b8f');
   }
   const radius = planet.pl_rade ?? 1;
   const insolation = planet.pl_insol ?? (planet.pl_eqt === null ? null : (planet.pl_eqt / 278.5) ** 4);
@@ -69,16 +90,21 @@ export function generateWorld(planet: PlanetRow): WorldRecipe {
     kindLabel: KIND_LABELS[kind],
     surface: surfaceFor(kind),
     palette,
-    atmosphereColor: kind === 'rocky' && temperatureBand === 'hot' ? '#d78755' : palette[2],
-    atmosphereStrength: kind === 'rocky' ? 0.16 : kind === 'unknown' ? 0.24 : 0.42,
+    atmosphereColor: kind === 'rocky' && (temperatureBand === 'hot' || temperatureBand === 'extreme') ? '#e39a69' : palette[2],
+    atmosphereStrength: kind === 'rocky' ? 0.18 : kind === 'unknown' ? 0.18 : 0.42,
     displayRadius: Math.min(2.45, Math.max(1.55, 1.5 + Math.cbrt(Math.max(0.1, radius)) * 0.36)),
-    illumination: insolation === null ? 1.25 : Math.min(3.2, Math.max(0.7, 0.85 + Math.log10(insolation + 1) * 0.85)),
+    illumination: insolation === null ? 0.95 : Math.min(1.25, Math.max(0.82, 0.92 + Math.log10(insolation + 1) * 0.2)),
     starColor: teff < 3700 ? '#ffb07a' : teff < 5200 ? '#ffd0a0' : teff < 6500 ? '#ffe5bd' : '#c7dcff',
-    noiseScale: 1.6 + random() * 3.2,
-    bandCount: 5 + Math.floor(random() * 9),
+    noiseScale: 1.8 + random() * 3.4,
+    bandCount: 4 + Math.floor(random() * 6),
     axialTilt: random() * 0.55 - 0.275,
     rotationSeconds: 70 + random() * 110,
     temperatureBand,
+    paletteVariant,
+    cloudCover: 0.3 + random() * 0.38,
+    relief: 0.55 + random() * 0.8,
+    storminess: random(),
+    heat: temperature === null ? 0 : Math.min(1, Math.max(0, (temperature - 500) / 1100)),
   };
 }
 

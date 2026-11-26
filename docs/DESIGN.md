@@ -13,9 +13,22 @@ A quiet deep-space observatory with editorial typography. The interface frames t
 
 - Atlas points represent real host systems, not random catalogue entries. RA/Dec and logarithmically compressed distance inform positions when present.
 - The system is an orrery with eccentricity-influenced ellipses, deterministic phases, and a highlighted selected world. Distances and body sizes are intentionally compressed.
-- Planet portraits use function-generated shader noise. Gas and ice giants use atmospheric bands; sub-Neptune and unknown worlds use clouds; only rocky worlds receive terrain-like color relief.
-- An atmosphere rim, directional terminator, stellar color, and restrained glow provide depth. No external planet artwork or logos are used.
+- Planet portraits use function-generated shader noise. Gas and ice giants use warped atmospheric bands and deterministic storm systems; sub-Neptune worlds use layered cloud decks and currents; unresolved worlds use a restrained cloud veil; only rocky worlds receive terrain-like color relief. Hot rocky worlds may include explicitly illustrative emissive fractures.
+- An atmosphere rim, directional terminator, relief-sensitive lighting, stellar color, and restrained glow provide depth. No external planet artwork or logos are used.
+- Atlas cores are compact, with a separate low-opacity halo for multi-planet systems. Atlas, system, and portrait share the same persistent starfield and scene lifecycle.
 - A CSS composition remains behind the canvas so startup or WebGL failure never leaves a black rectangle.
+
+## Rendered iteration record
+
+The same production route and deterministic camera were captured at 1440 × 960 and 375 × 812 with `scripts/capture-references.mjs`. The reference set is TRAPPIST-1 e, 55 Cnc e, Kepler-10 b, HD 189733 b, K2-18 b, and KIC 10001893 b. Kepler-10 b joined after the first pass to represent a genuinely hot rocky world; 55 Cnc e remains in the application's transparent derived sub-Neptune class.
+
+Four captured passes are retained under `evidence/round-1/` through `evidence/round-4/`; each manifest records exact URLs, viewport dimensions, renderer metrics, console/page/network errors, and owned-server shutdown. The frames, not only shader compilation, were inspected.
+
+- **Round 1 → 2:** softened overregular giant bands and overexposure; normalized portrait framing by radius and viewport; reduced atlas core size; added multi-system halos; replaced abrupt scene removal with interruptible travel and outgoing crossfades.
+- **Round 2 → 3:** separated sub-Neptune currents from unresolved cloud veils; reduced hot-rock fracture coverage; softened giant-band contrast; increased atlas legibility; added Kepler-10 b to the reference set.
+- **Round 3 → 4:** restricted emissive fractures to broad hot provinces; removed the bullseye-like storm artifact; opened gaps in K2-18 b's cloud deck so the darker lower layer remains visible.
+
+Round 4 contains 10 valid production frames with zero console errors, page errors, or failed responses. Its desktop software-Chromium samples are diagnostic only (15–20 FPS in the close portrait; 46 FPS in the atlas), not physical-device measurements. Mobile captures use the low-power geometry path.
 
 ## Motion
 
