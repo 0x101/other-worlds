@@ -1,0 +1,1 @@
+select pl_name,hostname,sy_pnum,sy_snum,cb_flag,pl_rade,pl_bmasse,pl_bmassprov,pl_dens,pl_orbper,pl_orbsmax,pl_orbeccen,pl_eqt,pl_insol,st_teff,st_rad,st_mass,st_spectype,st_lum,disc_year,discoverymethod,disc_facility,disc_refname,ra,dec,sy_dist,pl_controv_flag,tran_flag,rv_flag,ttv_flag,pul_flag,ptv_flag,ast_flag,obm_flag,micro_flag,etv_flag,ima_flag,dkin_flag from pscomppars;
