@@ -34,6 +34,13 @@ React 19 + TypeScript + Vite for the static application; Three.js and OrbitContr
 - `scripts/fetch-gaia-neighbourhood.mjs`: bounded ARI partner TAP download or preserved-CSV input, strict CSV/quality/identity validation, exact source IDs, and reproducible raw/runtime/query outputs with provenance.
 - `scripts/validate-browser.mjs`: owned Vite dev/preview process, Chromium golden-path and atlas journeys, independently propagated desktop/mobile/reduced-motion/no-WebGL ISS checks, projected WebGL Gaia picking, exact-ID source inspection, real PNG/raw-data downloads, screenshots, network/console/performance capture, geometry assertions, and descendant cleanup.
 
+## Moon expedition integration
+
+- `src/lib/moon.ts` uses the pinned runtime `GeoMoon`, `KM_PER_AU`, and `Rotation_EQJ_ECL()` for strict-millisecond, Earth-centred EQJ/J2000 au derivation inside a ±24 h interaction window. `src/components/MoonExpedition.tsx` provides explicit three-hour steps, reference reset, physical-distance readout, UTC/TT/frame/scale/uncertainty disclosures, source links, and close. `scripts/build-moon-expedition.mjs` deterministically preserves the reference manifest without network access.
+- `moonEpoch` is Earth-only exact-link state serialized as `?moon=`. The URL parser and application callbacks keep ISS and Moon mutually exclusive; a legacy ISS parameter takes precedence if both are supplied. Leaving Earth or closing the instrument clears Moon state, while time steps replace rather than flood history.
+- The existing Earth renderer owns the Moon trace/marker. EQJ and ECL vectors remain CPU data; the ECL `(x,z,−y)` direction is retained while separation is fixed at `3.45` before a common `0.82` desktop or `0.48` phone screen-fit scale on Earth/atmosphere/Moon. The camera, canvas, controls, and physical values do not change. Closing restores the ordinary Earth display scale and disposes the Moon objects.
+- The schematic sphere/ring and fixed scene lighting are not an observed surface or calculated phase. No-WebGL uses the same pure derivation for an SVG trace/marker with `data-eqj-au` and `data-ecl-au`. WebGL diagnostics and `.scene-canvas.dataset.moonEpoch`, `dataset.moonEqjAu`, and `dataset.moonEclAu` support independent browser checks.
+
 ## Data flow
 
 1. `App` fetches the preserved NASA base JSON, its provenance, the normalized traceability companion, and companion provenance in parallel. The 17 MiB raw NASA companion is not in the web bundle.

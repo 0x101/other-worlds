@@ -14,6 +14,7 @@
     "data:validate": "node scripts/validate-data.mjs",
     "data:solar": "node scripts/build-solar-snapshot.mjs",
     "data:iss": "node scripts/build-iss-expedition.mjs",
+    "data:moon": "node scripts/build-moon-expedition.mjs",
     "data:gaia": "node scripts/fetch-gaia-neighbourhood.mjs",
     "validate:browser": "node scripts/validate-browser.mjs"
   },

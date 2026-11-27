@@ -18,6 +18,7 @@ import { SOLAR_SNAPSHOT, lookBackGeometry } from './lib/goldenPath';
 import { GAIA_NEIGHBOURHOOD, type GaiaStar } from './lib/gaia';
 import { SOLAR_MAX_EPOCH, SOLAR_PLAYBACK_INTERVAL_MS, SOLAR_PLAYBACK_STEP_DAYS, shiftSolarEpoch } from './lib/solarTime';
 import { ISS_EXPEDITION } from './lib/iss';
+import { MOON_EXPEDITION } from './lib/moon';
 
 function positionLabel(view: ViewName, planet: PlanetRow | null): string {
   if (view === 'system') return planet?.hostname ?? 'Exoplanet system';
@@ -67,7 +68,12 @@ export default function App() {
 
   const changeIssEpoch = useCallback((issEpoch: string | null) => {
     const boundary = issEpoch === null || journeyRef.current.issEpoch === null;
-    navigate({ issEpoch }, boundary ? 'push' : 'replace');
+    navigate({ issEpoch, moonEpoch: null }, boundary ? 'push' : 'replace');
+  }, [navigate]);
+
+  const changeMoonEpoch = useCallback((moonEpoch: string | null) => {
+    const boundary = moonEpoch === null || journeyRef.current.moonEpoch === null;
+    navigate({ moonEpoch, issEpoch: null }, boundary ? 'push' : 'replace');
   }, [navigate]);
 
   useEffect(() => {
@@ -153,6 +159,7 @@ export default function App() {
     navigate({
       view,
       issEpoch: null,
+      moonEpoch: null,
       planetName: retainsWorld ? selected.pl_name : null,
       origin: view === 'atlas' ? 'atlas' : view === 'neighbourhood' ? 'neighbourhood' : journeyRef.current.origin,
       experience: 'wonder',
@@ -199,9 +206,13 @@ export default function App() {
 
   const hasWorld = journey.view === 'system' || journey.view === 'planet';
   const issActive = journey.view === 'earth' && journey.issEpoch !== null;
+  const moonActive = journey.view === 'earth' && journey.moonEpoch !== null;
+  const earthExpeditionActive = issActive || moonActive;
+  const sourceUrl = issActive ? ISS_EXPEDITION.source.requestUrl : moonActive ? MOON_EXPEDITION.source.url : journey.view === 'neighbourhood' ? GAIA_NEIGHBOURHOOD.source.catalogueDocumentation : journey.view === 'solar' ? SOLAR_SNAPSHOT.source.url : provenance?.sourceUrl;
+  const sourceLabel = issActive ? 'CT / OMM' : moonActive || journey.view === 'solar' ? `AE / ${SOLAR_SNAPSHOT.source.version}` : journey.view === 'neighbourhood' ? 'GAIA / DR3' : 'NASA / TAP';
 
   return (
-    <main className={`app view-${journey.view} experience-${journey.experience} ${issActive ? 'iss-active' : ''} ${sceneReady ? 'scene-ready' : ''}`} data-view={journey.view}>
+    <main className={`app view-${journey.view} experience-${journey.experience} ${earthExpeditionActive ? 'earth-expedition-active' : ''} ${sceneReady ? 'scene-ready' : ''}`} data-view={journey.view}>
       <div className="scene-poster" aria-hidden="true"><span /><span /><span /></div>
       {catalogue && !sceneFailed && (
         <Scene
@@ -211,6 +222,7 @@ export default function App() {
           cameraState={journey.camera}
           solarEpoch={journey.solarEpoch}
           issEpoch={journey.issEpoch}
+          moonEpoch={journey.moonEpoch}
           reducedMotion={reducedMotion}
           lowPower={lowPower}
           onSelect={selectPlanet}
@@ -220,7 +232,7 @@ export default function App() {
           onFailure={() => { setSceneFailed(true); setSceneReady(true); }}
         />
       )}
-      {catalogue && sceneFailed && <StaticScene catalogue={catalogue} view={journey.view} planet={selected} solarEpoch={journey.solarEpoch} issEpoch={journey.issEpoch} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} />}
+      {catalogue && sceneFailed && <StaticScene catalogue={catalogue} view={journey.view} planet={selected} solarEpoch={journey.solarEpoch} issEpoch={journey.issEpoch} moonEpoch={journey.moonEpoch} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} />}
       <div className="scene-vignette" aria-hidden="true" />
 
       <header className="app-header">
@@ -228,11 +240,11 @@ export default function App() {
           <Orbit size={25} strokeWidth={1.25} />
           <span>OTHER<br />WORLDS</span>
         </button>
-        <div className="journey-position" aria-live="polite">{issActive ? 'Earth / ISS selected epoch' : positionLabel(journey.view, selected)}</div>
+        <div className="journey-position" aria-live="polite">{issActive ? 'Earth / ISS selected epoch' : moonActive ? 'Earth / Moon selected epoch' : positionLabel(journey.view, selected)}</div>
         <nav className="header-actions" aria-label="View actions">
           {hasWorld && selected && <button className="text-button evidence-open" onClick={() => openExperience('observatory')}>Evidence</button>}
           {hasWorld && selected && <button className="icon-button" onClick={openShare} aria-label="Share this world"><Share2 size={18} /></button>}
-          {provenance && <a className="source-link" href={issActive ? ISS_EXPEDITION.source.requestUrl : journey.view === 'neighbourhood' ? GAIA_NEIGHBOURHOOD.source.catalogueDocumentation : journey.view === 'solar' ? SOLAR_SNAPSHOT.source.url : provenance.sourceUrl} target="_blank" rel="noreferrer">{issActive ? 'CT / OMM' : journey.view === 'neighbourhood' ? 'GAIA / DR3' : journey.view === 'solar' ? `AE / ${SOLAR_SNAPSHOT.source.version}` : 'NASA / TAP'} <ArrowUpRight size={14} /></a>}
+          {sourceUrl && <a className="source-link" href={sourceUrl} target="_blank" rel="noreferrer">{sourceLabel} <ArrowUpRight size={14} /></a>}
         </nav>
       </header>
 
@@ -255,7 +267,7 @@ export default function App() {
         </section>
       )}
 
-      {catalogue && <Expedition catalogue={catalogue} view={journey.view} planet={selected} gaiaStar={selectedGaia} solarEpoch={journey.solarEpoch} issEpoch={journey.issEpoch} solarPlaying={solarPlaying} reducedMotion={reducedMotion} staticMode={sceneFailed} onView={goToView} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} onSolarEpoch={selectSolarEpoch} onIssEpoch={changeIssEpoch} onSolarPlayingChange={setSolarPlaying} />}
+      {catalogue && <Expedition catalogue={catalogue} view={journey.view} planet={selected} gaiaStar={selectedGaia} solarEpoch={journey.solarEpoch} issEpoch={journey.issEpoch} moonEpoch={journey.moonEpoch} solarPlaying={solarPlaying} reducedMotion={reducedMotion} staticMode={sceneFailed} onView={goToView} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} onSolarEpoch={selectSolarEpoch} onIssEpoch={changeIssEpoch} onMoonEpoch={changeMoonEpoch} onSolarPlayingChange={setSolarPlaying} />}
 
       {catalogue && journey.view === 'atlas' && (
         <>

@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
-import { Body, HelioVector, Rotation_EQJ_ECL, RotateVector } from 'astronomy-engine';
+import { Body, GeoMoon, HelioVector, KM_PER_AU, Rotation_EQJ_ECL, RotateVector } from 'astronomy-engine';
 import { json2satrec, propagate } from 'satellite.js';
 import { buildSnapshot } from './fetch-gaia-neighbourhood.mjs';
 
@@ -78,6 +78,28 @@ const issSelectedProbe = propagate(issSatrec, new Date(issSelectedProbeEpoch));
 assert(issSelectedProbe && [issSelectedProbe.position.x, issSelectedProbe.position.y, issSelectedProbe.position.z].every(Number.isFinite), 'ISS selected-time probe failed.');
 assert(JSON.stringify(solarVector(issSelectedProbe.position)) !== JSON.stringify(issReferenceVector), 'ISS selected-time probe did not change TEME geometry.');
 
+const moon = await json('src/data/moon-expedition.json');
+assert(moon.schema === 'other-worlds/moon-expedition-v1' && moon.status === 'DERIVED' && moon.object.name === 'Moon', 'Moon identity or derivation status changed.');
+assert(moon.source.name === 'Astronomy Engine' && moon.source.version === '2.1.19' && moon.source.method.includes('GeoMoon'), 'Moon generator or method changed.');
+assert(moon.position.units === 'au' && moon.position.frame === 'EQJ/J2000' && moon.position.origin === 'Earth centre', 'Moon source units, frame, or origin changed.');
+assert(moon.position.lightTimeCorrection === false && moon.position.aberrationCorrection === false && moon.position.uncertainty === null, 'Moon correction/uncertainty contract changed.');
+assert(moon.source.timeSemantics.includes('UT1 and UTC') && moon.source.timeSemantics.includes('TT internally'), 'Moon time-scale limitations changed.');
+const moonReferenceMs = Date.parse(moon.selection.defaultEpoch);
+const moonWindowMs = 24 * 60 * 60 * 1000;
+assert(moon.selection.defaultEpoch === '2026-12-18T00:00:00.000Z' && moon.referenceDerivation.epoch === moon.selection.defaultEpoch, 'Moon reference epoch changed.');
+assert(moon.selection.minEpoch === new Date(moonReferenceMs - moonWindowMs).toISOString() && moon.selection.maxEpoch === new Date(moonReferenceMs + moonWindowMs).toISOString(), 'Moon selection bounds changed.');
+assert(moon.selection.stepMinutes === 180 && moon.trace.halfSpanMinutes === 720 && moon.trace.sampleStepMinutes === 60, 'Moon explicit-step or trace contract changed.');
+assert(moon.display.mapping.includes('(x,z,-y)') && moon.display.radialScale.includes('3.45') && moon.display.bodyMarker.includes('not an observed surface portrait'), 'Moon display or schematic-marker disclosure changed.');
+const moonReference = GeoMoon(new Date(moon.selection.defaultEpoch));
+const moonReferenceEcl = RotateVector(solarRotation, moonReference);
+assert(JSON.stringify(moon.referenceDerivation.eqjAu) === JSON.stringify(solarVector(moonReference)), 'Moon reference EQJ vector mismatch.');
+assert(JSON.stringify(moon.referenceDerivation.eclipticAu) === JSON.stringify(solarVector(moonReferenceEcl)), 'Moon reference ECL vector mismatch.');
+assert(moon.referenceDerivation.geocentricDistanceKm === Number((moonReference.Length() * KM_PER_AU).toFixed(12)), 'Moon reference distance mismatch.');
+const moonSelectedProbeEpoch = new Date(moonReferenceMs + 180 * 60 * 1000).toISOString();
+const moonSelectedProbe = GeoMoon(new Date(moonSelectedProbeEpoch));
+assert([moonSelectedProbe.x, moonSelectedProbe.y, moonSelectedProbe.z].every(Number.isFinite), 'Moon selected-time probe failed.');
+assert(JSON.stringify(solarVector(moonSelectedProbe)) !== JSON.stringify(solarVector(moonReference)), 'Moon selected-time probe did not change EQJ geometry.');
+
 assert(sha256(baseText) === '6bcd8b57617226da328e85bee5c2955755ee054ed4d775dd43f03855cb2cb362', 'The preserved base snapshot hash changed.');
 assert(base.length === 6473 && base.length === baseProvenance.rowCount, 'Base row count does not match the verified snapshot.');
 assert(new Set(base.map((row) => row.pl_name)).size === base.length, 'Base planet identifiers are not unique.');
@@ -145,6 +167,24 @@ const report = {
     liveRefresh: false,
     lightTimeCorrection: false,
     uncertainty: null,
+  },
+  moon: {
+    object: 'Moon',
+    referenceEpoch: moon.selection.defaultEpoch,
+    generatedAt: moon.source.generatedAt,
+    selectedEpochWindowUtc: [moon.selection.minEpoch, moon.selection.maxEpoch],
+    generator: `Astronomy Engine ${moon.source.version}`,
+    units: moon.position.units,
+    sourceFrame: moon.position.frame,
+    displayFrame: 'ECL/J2000',
+    exactReferenceMatch: true,
+    selectedEpochProbe: moonSelectedProbeEpoch,
+    geocentricDistanceKm: moon.referenceDerivation.geocentricDistanceKm,
+    lightTimeCorrection: false,
+    aberrationCorrection: false,
+    uncertainty: null,
+    surfaceClaim: false,
+    phaseClaim: false,
   },
   gaia: {
     rows: gaia.rowCount,

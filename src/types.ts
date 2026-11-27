@@ -108,6 +108,7 @@ export interface JourneyState {
   view: ViewName;
   solarEpoch: string;
   issEpoch: string | null;
+  moonEpoch: string | null;
   planetName: string | null;
   origin: JourneyOrigin;
   filter: FilterName;

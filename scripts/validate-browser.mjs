@@ -4,6 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { chromium } from '@playwright/test';
 import { json2satrec, propagate } from 'satellite.js';
+import { GeoMoon, Rotation_EQJ_ECL, RotateVector } from 'astronomy-engine';
 import * as THREE from 'three';
 
 const root = process.cwd();
@@ -12,11 +13,17 @@ const evidenceDir = path.join(root, 'evidence');
 const base = 'http://127.0.0.1:7100';
 const gaia = JSON.parse(await readFile(path.join(root, 'src/data/gaia-neighbourhood.json'), 'utf8'));
 const iss = JSON.parse(await readFile(path.join(root, 'src/data/iss-expedition.json'), 'utf8'));
+const moon = JSON.parse(await readFile(path.join(root, 'src/data/moon-expedition.json'), 'utf8'));
 const issSatrec = json2satrec(iss.elements);
 const issVectorAt = (epoch) => {
   const result = propagate(issSatrec, new Date(epoch));
   if (!result) throw new Error(`ISS browser reference propagation failed at ${epoch}.`);
   return [result.position.x, result.position.y, result.position.z];
+};
+const moonVectorAt = (epoch) => {
+  const eqj = GeoMoon(new Date(epoch));
+  const ecliptic = RotateVector(Rotation_EQJ_ECL(), eqj);
+  return { eqj: [eqj.x, eqj.y, eqj.z], ecliptic: [ecliptic.x, ecliptic.y, ecliptic.z] };
 };
 const projectionCamera = new THREE.PerspectiveCamera(46, 1440 / 960, 0.1, 500);
 projectionCamera.position.set(0, 7, 44);
@@ -157,6 +164,44 @@ try {
   check('ISS reset restores the source epoch and disables redundant reset', await page.getByRole('button', { name: 'Reset to ISS source epoch' }).isDisabled() && page.url().includes(`iss=${encodeURIComponent(iss.selection.defaultEpoch)}`));
   await page.getByRole('button', { name: 'Close ISS expedition' }).click();
   check('closing the ISS expedition removes its marker and URL state without leaving Earth', await page.locator('.iss-expedition').count() === 0 && !page.url().includes('iss=') && await page.evaluate(() => window.__OTHER_WORLDS__?.view === 'earth' && !document.querySelector('.scene-canvas')?.dataset.issEpoch));
+
+  const cameraBeforeMoon = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__.camera }));
+  await page.evaluate(() => { window.__moonValidationCanvas = document.querySelector('.scene-canvas canvas'); });
+  await page.getByRole('button', { name: 'Meet the Moon' }).click();
+  await page.waitForFunction((epoch) => document.querySelector('.scene-canvas')?.dataset.moonEpoch === epoch, moon.selection.defaultEpoch);
+  await ready(page, 'earth');
+  check('Moon expedition opens at its preserved reference epoch with pinned ephemeris credit', await page.locator('.moon-expedition .iss-selected-time time').getAttribute('datetime') === moon.selection.defaultEpoch && page.url().includes(`moon=${encodeURIComponent(moon.selection.defaultEpoch)}`) && !page.url().includes('iss=') && await page.getByRole('link', { name: 'AE / 2.1.19' }).getAttribute('href') === moon.source.url);
+  check('Moon marker matches independent EQJ/ECL vectors without resetting canvas or camera', await page.evaluate(({ expected, before }) => {
+    const container = document.querySelector('.scene-canvas');
+    const eqj = container?.dataset.moonEqjAu?.split(',').map(Number) ?? [];
+    const ecliptic = container?.dataset.moonEclAu?.split(',').map(Number) ?? [];
+    const camera = window.__OTHER_WORLDS__.camera;
+    return expected.eqj.every((value, index) => Math.abs(value - eqj[index]) < 0.000000000001) && expected.ecliptic.every((value, index) => Math.abs(value - ecliptic[index]) < 0.000000000001) && window.__moonValidationCanvas === document.querySelector('.scene-canvas canvas') && Object.keys(before).every((key) => Math.abs(camera[key] - before[key]) < 0.000001);
+  }, { expected: moonVectorAt(moon.selection.defaultEpoch), before: cameraBeforeMoon }));
+  await page.getByRole('button', { name: 'Next 3 hours' }).click();
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.moonEpoch === '2026-12-18T03:00:00.000Z');
+  await ready(page, 'earth');
+  check('Moon three-hour step updates exact-link state and derived geometry in the existing scene', page.url().includes('moon=2026-12-18T03%3A00%3A00.000Z') && await page.evaluate(({ expected, before }) => {
+    const actual = document.querySelector('.scene-canvas')?.dataset.moonEqjAu?.split(',').map(Number) ?? [];
+    const camera = window.__OTHER_WORLDS__.camera;
+    return expected.eqj.every((value, index) => Math.abs(value - actual[index]) < 0.000000000001) && window.__moonValidationCanvas === document.querySelector('.scene-canvas canvas') && Object.keys(before).every((key) => Math.abs(camera[key] - before[key]) < 0.000001);
+  }, { expected: moonVectorAt('2026-12-18T03:00:00.000Z'), before: cameraBeforeMoon }));
+  await noOverflow(page, 'desktop Moon expedition');
+  await shot(page, 'desktop-earth-moon');
+  const selectedMoonUrl = page.url();
+  await page.reload({ waitUntil: 'networkidle' });
+  await ready(page, 'earth');
+  check('Moon exact-link reload restores the open expedition and selected instant', page.url() === selectedMoonUrl && await page.locator('.moon-expedition .iss-selected-time time').getAttribute('datetime') === '2026-12-18T03:00:00.000Z' && await page.evaluate(() => window.__OTHER_WORLDS__?.moonEpoch === '2026-12-18T03:00:00.000Z'));
+  await page.getByText('Ephemeris, time & scale', { exact: true }).click();
+  check('Moon source audit exposes reference epoch, time scales, display compression, and scientific limits', await page.getByText('2026-12-18T00:00:00.000Z', { exact: true }).isVisible() && await page.getByText(/UT1 ≈ UTC/).isVisible() && await page.getByText(/not an accuracy guarantee/).isVisible() && await page.getByText(/not an observed surface portrait or calculated phase/).isVisible());
+  await shot(page, 'desktop-earth-moon-method');
+  await page.getByText('Ephemeris, time & scale', { exact: true }).click();
+  performance.moon = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__ }));
+  await page.getByRole('button', { name: 'Reset to Moon reference epoch' }).click();
+  await page.waitForFunction((epoch) => document.querySelector('.scene-canvas')?.dataset.moonEpoch === epoch, moon.selection.defaultEpoch);
+  check('Moon reset restores the reference epoch and disables redundant reset', await page.getByRole('button', { name: 'Reset to Moon reference epoch' }).isDisabled() && page.url().includes(`moon=${encodeURIComponent(moon.selection.defaultEpoch)}`));
+  await page.getByRole('button', { name: 'Close Moon expedition' }).click();
+  check('closing the Moon expedition removes its marker and URL state without leaving Earth', await page.locator('.moon-expedition').count() === 0 && !page.url().includes('moon=') && await page.evaluate(() => window.__OTHER_WORLDS__?.view === 'earth' && !document.querySelector('.scene-canvas')?.dataset.moonEpoch));
 
   await page.getByRole('button', { name: 'Leave Earth' }).click();
   await ready(page, 'solar');
@@ -443,6 +488,34 @@ try {
   await shot(phone, 'mobile-earth-iss');
   await phone.getByRole('button', { name: 'Close ISS expedition' }).click();
   check('mobile ISS closes cleanly before leaving Earth', await phone.locator('.iss-expedition').count() === 0 && !phone.url().includes('iss='));
+  await phone.getByRole('button', { name: 'Meet the Moon' }).click();
+  await phone.waitForFunction((epoch) => document.querySelector('.scene-canvas')?.dataset.moonEpoch === epoch, moon.selection.defaultEpoch);
+  await phone.getByRole('button', { name: 'Next 3 hours' }).click();
+  await phone.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.moonEpoch === '2026-12-18T03:00:00.000Z');
+  await noOverflow(phone, 'mobile Moon expedition');
+  const mobileMoonGeometry = await phone.evaluate(() => {
+    const box = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, width: rect.width, height: rect.height };
+    };
+    return {
+      panel: box('.moon-expedition'),
+      narrative: box('.earth-copy'),
+      primary: box('.earth-copy .primary-button'),
+      credit: box('.earth-credit'),
+      controls: [...document.querySelectorAll('.moon-expedition .iss-time-actions button, .moon-expedition .iss-heading .icon-button')].map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { label: element.getAttribute('aria-label'), top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, width: rect.width, height: rect.height };
+      }),
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+    };
+  });
+  check('mobile Moon panel and controls stay bounded and clear the Earth narrative, departure action, and credit', mobileMoonGeometry.panel.top >= Math.max(mobileMoonGeometry.narrative.bottom, mobileMoonGeometry.primary.bottom) && mobileMoonGeometry.panel.bottom <= mobileMoonGeometry.credit.top && mobileMoonGeometry.panel.left >= 0 && mobileMoonGeometry.panel.right <= mobileMoonGeometry.viewportWidth && mobileMoonGeometry.panel.bottom <= mobileMoonGeometry.viewportHeight && mobileMoonGeometry.controls.every((control) => control.top >= mobileMoonGeometry.panel.top && control.bottom <= mobileMoonGeometry.panel.bottom && control.left >= 0 && control.right <= mobileMoonGeometry.viewportWidth && control.width >= 44 && control.height >= 44), mobileMoonGeometry);
+  check('mobile Moon manual step preserves the exact selected instant', await phone.locator('.moon-expedition .iss-selected-time time').getAttribute('datetime') === '2026-12-18T03:00:00.000Z' && phone.url().includes('moon=2026-12-18T03%3A00%3A00.000Z'));
+  await shot(phone, 'mobile-earth-moon');
+  await phone.getByRole('button', { name: 'Close Moon expedition' }).click();
+  check('mobile Moon closes cleanly before leaving Earth', await phone.locator('.moon-expedition').count() === 0 && !phone.url().includes('moon='));
   await phone.getByRole('button', { name: 'Leave Earth' }).click();
   await ready(phone, 'solar');
   await noOverflow(phone, 'mobile Solar System');
@@ -553,6 +626,14 @@ try {
   check('reduced-motion ISS retains explicit ten-minute stepping', await quiet.locator('.iss-selected-time time').getAttribute('datetime') === '2026-11-27T09:39:25.185Z');
   await shot(quiet, 'desktop-earth-iss-reduced-motion');
   await quiet.getByRole('button', { name: 'Close ISS expedition' }).click();
+  await quiet.getByRole('button', { name: 'Meet the Moon' }).click();
+  await quiet.waitForFunction((epoch) => document.querySelector('.scene-canvas')?.dataset.moonEpoch === epoch, moon.selection.defaultEpoch);
+  check('reduced-motion Moon has no playback control or CSS animation', await quiet.getByRole('button', { name: /Play/ }).count() === 0 && await quiet.locator('.moon-expedition').evaluate((element) => getComputedStyle(element).animationName === 'none'));
+  await quiet.getByRole('button', { name: 'Next 3 hours' }).click();
+  await quiet.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.moonEpoch === '2026-12-18T03:00:00.000Z');
+  check('reduced-motion Moon retains explicit three-hour stepping', await quiet.locator('.moon-expedition .iss-selected-time time').getAttribute('datetime') === '2026-12-18T03:00:00.000Z');
+  await shot(quiet, 'desktop-earth-moon-reduced-motion');
+  await quiet.getByRole('button', { name: 'Close Moon expedition' }).click();
   await quiet.getByRole('button', { name: 'Leave Earth' }).click();
   await ready(quiet, 'solar');
   check('reduced-motion disables the journey transition', await quiet.locator('.journey-wipe').evaluate((element) => getComputedStyle(element).display === 'none'));
@@ -608,6 +689,19 @@ try {
   await noOverflow(fallbackPage, 'no-WebGL ISS expedition');
   await shot(fallbackPage, 'desktop-static-earth-iss');
   await fallbackPage.getByRole('button', { name: 'Close ISS expedition' }).click();
+  await fallbackPage.getByRole('button', { name: 'Meet the Moon' }).click();
+  await fallbackPage.getByTestId('static-moon').waitFor();
+  const staticMoonBefore = await fallbackPage.locator('[data-testid="static-moon"] [data-moon-marker]').getAttribute('data-eqj-au');
+  await fallbackPage.getByRole('button', { name: 'Next 3 hours' }).click();
+  await fallbackPage.waitForFunction((before) => document.querySelector('[data-testid="static-moon"] [data-moon-marker]')?.getAttribute('data-eqj-au') !== before, staticMoonBefore);
+  check('no-WebGL Moon manual step updates independent EQJ/ECL geometry and its exact still label', await fallbackPage.locator('[data-testid="static-moon"] [data-moon-marker]').evaluate((element, expected) => {
+    const eqj = element.getAttribute('data-eqj-au')?.split(',').map(Number) ?? [];
+    const ecliptic = element.getAttribute('data-ecl-au')?.split(',').map(Number) ?? [];
+    return expected.eqj.every((value, index) => Math.abs(value - eqj[index]) < 0.000000000001) && expected.ecliptic.every((value, index) => Math.abs(value - ecliptic[index]) < 0.000000000001);
+  }, moonVectorAt('2026-12-18T03:00:00.000Z')) && (await fallbackPage.getByTestId('static-moon').getAttribute('aria-label'))?.includes('18 DEC 2026 · 03:00 UTC') && await fallbackPage.locator('.moon-expedition .iss-status').getByText(/Still reconstruction/, { exact: false }).isVisible());
+  await noOverflow(fallbackPage, 'no-WebGL Moon expedition');
+  await shot(fallbackPage, 'desktop-static-earth-moon');
+  await fallbackPage.getByRole('button', { name: 'Close Moon expedition' }).click();
   await fallbackPage.getByRole('button', { name: 'Leave Earth' }).click();
   await fallbackPage.locator('.static-solar').waitFor();
   const staticSolarCopy = await fallbackPage.locator('.solar-copy p').textContent();

@@ -1,6 +1,7 @@
 import type { ExperienceName, FilterName, JourneyState, ShareTemplate, ViewName } from '../types';
 import { DEFAULT_SOLAR_EPOCH, normalizeSolarEpoch } from './solarTime';
 import { normalizeIssEpoch } from './iss';
+import { normalizeMoonEpoch } from './moon';
 
 const VIEWS: ViewName[] = ['earth', 'solar', 'neighbourhood', 'atlas', 'system', 'planet', 'lookback'];
 const FILTERS: FilterName[] = ['all', 'rocky', 'giants', 'temperate', 'transiting', 'nearby'];
@@ -11,6 +12,7 @@ export const DEFAULT_JOURNEY: JourneyState = {
   view: 'earth',
   solarEpoch: DEFAULT_SOLAR_EPOCH,
   issEpoch: null,
+  moonEpoch: null,
   planetName: null,
   origin: 'neighbourhood',
   filter: 'all',
@@ -44,10 +46,12 @@ export function parseJourney(search: string): JourneyState {
   const shareParam = params.get('share') as ShareTemplate | null;
   const requestedShare = shareParam && SHARE_TEMPLATES.includes(shareParam) ? shareParam : legacyStudio ? 'portrait' : null;
   const shareTemplate = planetName && (view === 'planet' || view === 'system') ? requestedShare : null;
+  const issEpoch = view === 'earth' && params.has('iss') ? normalizeIssEpoch(params.get('iss')) : null;
   return {
     view,
     solarEpoch: view === 'solar' ? normalizeSolarEpoch(params.get('epoch')) : DEFAULT_SOLAR_EPOCH,
-    issEpoch: view === 'earth' && params.has('iss') ? normalizeIssEpoch(params.get('iss')) : null,
+    issEpoch,
+    moonEpoch: view === 'earth' && issEpoch === null && params.has('moon') ? normalizeMoonEpoch(params.get('moon')) : null,
     planetName: planetName && (view === 'system' || view === 'planet' || view === 'lookback') ? planetName : null,
     origin: params.get('from') === 'atlas' ? 'atlas' : 'neighbourhood',
     filter: filterParam && FILTERS.includes(filterParam) ? filterParam : 'all',
@@ -68,6 +72,7 @@ export function journeySearch(state: JourneyState): string {
   if (state.view !== 'earth') params.set('view', state.view);
   if (state.view === 'solar' && state.solarEpoch !== DEFAULT_SOLAR_EPOCH) params.set('epoch', normalizeSolarEpoch(state.solarEpoch));
   if (state.view === 'earth' && state.issEpoch !== null) params.set('iss', normalizeIssEpoch(state.issEpoch));
+  if (state.view === 'earth' && state.issEpoch === null && state.moonEpoch !== null) params.set('moon', normalizeMoonEpoch(state.moonEpoch));
   if (state.planetName && state.origin === 'atlas') params.set('from', 'atlas');
   if (state.filter !== 'all') params.set('filter', state.filter);
   if (state.query) params.set('q', state.query);

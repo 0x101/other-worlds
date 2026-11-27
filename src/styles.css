@@ -542,7 +542,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .view-solar .solar-worlds { left: 16px; right: 16px; max-width: none; }
 }
 
-/* Archived ISS expedition: selected-time derivation, never a live tracker. */
+/* Optional Earth expeditions: selected-time derivations, never live trackers. */
 .iss-expedition { position: absolute; z-index: 16; left: 3.2vw; bottom: calc(102px + env(safe-area-inset-bottom)); width: min(430px, 38vw); max-height: 310px; padding: 12px 14px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--p-line); background: oklch(0.145 0.014 175 / .88); backdrop-filter: blur(18px); }
 .iss-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .iss-heading .section-label { font-size: 8px; }
@@ -569,13 +569,15 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .iss-method .iss-hash { overflow-wrap: anywhere; color: var(--p-faint); font-size: 8px; }
 .iss-method nav { display: flex; flex-wrap: wrap; gap: 14px; }
 .iss-method a { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; color: var(--accent); }
-.iss-active .earth-copy { top: 15%; }
-.iss-active .earth-copy h1 { font-size: clamp(64px, 6vw, 84px); }
-.iss-active .earth-copy > p { display: none; }
-.iss-active .earth-copy .expedition-actions { margin-top: 18px; }
+.earth-expedition-active .earth-copy { top: 15%; }
+.earth-expedition-active .earth-copy h1 { font-size: clamp(64px, 6vw, 84px); }
+.earth-expedition-active .earth-copy > p { display: none; }
+.earth-expedition-active .earth-copy .expedition-actions { margin-top: 18px; }
 .static-earth-orbit { position: relative; width: min(54vmin, 540px); height: min(54vmin, 540px); margin-left: 18vw; }
 .static-earth-orbit .static-earth { width: 100%; height: 100%; margin: 0; }
 .static-iss { position: absolute; inset: -16%; width: 132%; height: 132%; overflow: visible; pointer-events: none; }
+.static-moon { position: absolute; inset: -34%; width: 168%; height: 168%; overflow: visible; pointer-events: none; }
+.moon-expedition .iss-status { color: #cfcdc2; }
 
 @media (max-width: 900px) {
   .iss-expedition { width: 42vw; }
@@ -583,10 +585,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 }
 
 @media (max-width: 640px) {
-  .iss-active .earth-copy { top: 12%; }
-  .iss-active .earth-copy h1 { margin: 10px 0; font-size: 46px; }
-  .iss-active .earth-copy .expedition-actions { gap: 4px; margin-top: 10px; }
-  .iss-active .earth-copy .expedition-actions .text-button { min-height: 40px; }
+  .earth-expedition-active .earth-copy { top: 12%; }
+  .earth-expedition-active .earth-copy h1 { margin: 10px 0; font-size: 46px; }
+  .earth-expedition-active .earth-copy .expedition-actions { gap: 4px; margin-top: 10px; }
+  .earth-expedition-active .earth-copy .expedition-actions .text-button { min-height: 40px; }
   .iss-expedition { left: 16px; right: 16px; bottom: calc(128px + env(safe-area-inset-bottom)); width: auto; max-height: 280px; padding: 10px 12px; }
   .iss-heading h2 { font-size: 25px; }
   .iss-heading .icon-button { width: 44px; height: 44px; }

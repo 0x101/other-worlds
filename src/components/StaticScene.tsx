@@ -5,6 +5,7 @@ import { hostColor, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '..
 import { GAIA_NEIGHBOURHOOD, gaiaDisplayColour, gaiaDisplayPosition, type GaiaStar } from '../lib/gaia';
 import { formatSolarEpoch } from '../lib/solarTime';
 import { formatIssEpoch, issStateAt, issTraceAt } from '../lib/iss';
+import { formatMoonEpoch, moonStateAt, moonTraceAt } from '../lib/moon';
 
 interface StaticSceneProps {
   catalogue: Catalogue;
@@ -12,12 +13,14 @@ interface StaticSceneProps {
   planet: PlanetRow | null;
   solarEpoch: string;
   issEpoch: string | null;
+  moonEpoch: string | null;
   onSelect: (planet: PlanetRow) => void;
   onGaiaSelect: (star: GaiaStar) => void;
 }
 
-export default function StaticScene({ catalogue, view, planet, solarEpoch, issEpoch, onSelect, onGaiaSelect }: StaticSceneProps) {
+export default function StaticScene({ catalogue, view, planet, solarEpoch, issEpoch, moonEpoch, onSelect, onGaiaSelect }: StaticSceneProps) {
   const iss = view === 'earth' && issEpoch ? { state: issStateAt(issEpoch), trace: issTraceAt(issEpoch) } : null;
+  const moon = view === 'earth' && moonEpoch ? { state: moonStateAt(moonEpoch), trace: moonTraceAt(moonEpoch) } : null;
   if (view === 'earth') {
     return (
       <div className="static-scene static-earth-scene" data-testid="static-scene">
@@ -35,6 +38,16 @@ export default function StaticScene({ catalogue, view, planet, solarEpoch, issEp
                 <circle cx={iss.state.displayPosition.x} cy={-iss.state.displayPosition.y} r="0.13" fill="#f4d7a1" />
                 <circle cx={iss.state.displayPosition.x} cy={-iss.state.displayPosition.y} r="0.24" fill="none" stroke="#dac39e" strokeWidth="0.025" />
                 <title>ISS (ZARYA): derived TEME position, not live telemetry</title>
+              </g>
+            </svg>
+          )}
+          {moon && (
+            <svg className="static-moon" viewBox="-4.2 -4.2 8.4 8.4" role="img" aria-label={`Still GeoMoon-derived Moon direction at ${formatMoonEpoch(moonEpoch!)}; ECL/J2000 direction with radial separation compressed`} data-testid="static-moon">
+              <polyline points={moon.trace.map((point) => `${point.x},${-point.y}`).join(' ')} fill="none" stroke="#b9b8ae" strokeOpacity="0.38" strokeWidth="0.025" />
+              <g data-moon-marker data-eqj-au={moon.state.eqjAu.join(',')} data-ecl-au={moon.state.eclipticAu.join(',')}>
+                <circle cx={moon.state.displayPosition.x} cy={-moon.state.displayPosition.y} r="0.24" fill="#d9d4c7" />
+                <circle cx={moon.state.displayPosition.x} cy={-moon.state.displayPosition.y} r="0.36" fill="none" stroke="#c7c4b8" strokeWidth="0.025" />
+                <title>Moon: derived geocentric direction; schematic marker, not an observed surface or phase</title>
               </g>
             </svg>
           )}

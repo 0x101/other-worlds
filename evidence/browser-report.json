@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-27T21:15:03.866Z",
+  "validatedAt": "2026-11-27T23:00:09.148Z",
   "mode": "preview",
   "baseUrl": "http://127.0.0.1:7100",
   "checks": [
@@ -74,6 +74,51 @@
       "details": null
     },
     {
+      "name": "Moon expedition opens at its preserved reference epoch with pinned ephemeris credit",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Moon marker matches independent EQJ/ECL vectors without resetting canvas or camera",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Moon three-hour step updates exact-link state and derived geometry in the existing scene",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "desktop Moon expedition: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      }
+    },
+    {
+      "name": "Moon exact-link reload restores the open expedition and selected instant",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Moon source audit exposes reference epoch, time scales, display compression, and scientific limits",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Moon reset restores the reference epoch and disables redundant reset",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "closing the Moon expedition removes its marker and URL state without leaving Earth",
+      "pass": true,
+      "details": null
+    },
+    {
       "name": "Solar System opens eight modelled planets at the preserved explicit epoch",
       "pass": true,
       "details": null
@@ -118,15 +163,15 @@
       "pass": true,
       "details": {
         "before": {
-          "x": -8.650450142234055,
-          "y": 38.55296224620813,
-          "z": 41.36228734462301,
+          "x": -8.650450142977325,
+          "y": 38.55296224662774,
+          "z": 41.3622873440765,
           "targetX": 0,
           "targetY": 0,
           "targetZ": 0
         },
         "after": {
-          "x": -8.650450142977329,
+          "x": -8.650450142977336,
           "y": 38.55296224662774,
           "z": 41.3622873440765,
           "targetX": 0,
@@ -569,6 +614,104 @@
       "details": null
     },
     {
+      "name": "mobile Moon expedition: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      }
+    },
+    {
+      "name": "mobile Moon panel and controls stay bounded and clear the Earth narrative, departure action, and credit",
+      "pass": true,
+      "details": {
+        "panel": {
+          "top": 438.8125,
+          "bottom": 684,
+          "left": 16,
+          "right": 359,
+          "width": 343,
+          "height": 245.1875
+        },
+        "narrative": {
+          "top": 97.4375,
+          "bottom": 312.375,
+          "left": 22,
+          "right": 353,
+          "width": 331,
+          "height": 214.9375
+        },
+        "primary": {
+          "top": 216.375,
+          "bottom": 268.375,
+          "left": 22,
+          "right": 353,
+          "width": 331,
+          "height": 52
+        },
+        "credit": {
+          "top": 703.609375,
+          "bottom": 718,
+          "left": 22,
+          "right": 353,
+          "width": 331,
+          "height": 14.390625
+        },
+        "controls": [
+          {
+            "label": "Close Moon expedition",
+            "top": 449.8125,
+            "bottom": 493.8125,
+            "left": 302,
+            "right": 346,
+            "width": 44,
+            "height": 44
+          },
+          {
+            "label": "Previous 3 hours",
+            "top": 524.203125,
+            "bottom": 568.203125,
+            "left": 29,
+            "right": 73,
+            "width": 44,
+            "height": 44
+          },
+          {
+            "label": "Next 3 hours",
+            "top": 524.203125,
+            "bottom": 568.203125,
+            "left": 79,
+            "right": 123,
+            "width": 44,
+            "height": 44
+          },
+          {
+            "label": "Reset to Moon reference epoch",
+            "top": 524.203125,
+            "bottom": 568.203125,
+            "left": 245.3125,
+            "right": 346,
+            "width": 100.6875,
+            "height": 44
+          }
+        ],
+        "viewportWidth": 375,
+        "viewportHeight": 812
+      }
+    },
+    {
+      "name": "mobile Moon manual step preserves the exact selected instant",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "mobile Moon closes cleanly before leaving Earth",
+      "pass": true,
+      "details": null
+    },
+    {
       "name": "mobile Solar System: no page overflow",
       "pass": true,
       "details": {
@@ -816,6 +959,16 @@
       "details": null
     },
     {
+      "name": "reduced-motion Moon has no playback control or CSS animation",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "reduced-motion Moon retains explicit three-hour stepping",
+      "pass": true,
+      "details": null
+    },
+    {
       "name": "reduced-motion disables the journey transition",
       "pass": true,
       "details": null
@@ -879,6 +1032,21 @@
     },
     {
       "name": "no-WebGL ISS expedition: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800,
+        "scrollHeight": 800
+      }
+    },
+    {
+      "name": "no-WebGL Moon manual step updates independent EQJ/ECL geometry and its exact still label",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no-WebGL Moon expedition: no page overflow",
       "pass": true,
       "details": {
         "width": 1280,
@@ -995,6 +1163,7 @@
       "planets": 6473,
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
+      "moonEpoch": null,
       "camera": {
         "x": 0,
         "y": 0.4492529737540238,
@@ -1005,19 +1174,42 @@
       },
       "transitioning": false,
       "resources": 12,
-      "transferBytes": 2316713
+      "transferBytes": 2318762
     },
     "iss": {
       "ready": true,
       "view": "earth",
       "planet": null,
-      "fps": 33,
+      "fps": 37,
       "drawCalls": 5,
       "triangles": 22056,
       "systems": 4865,
       "planets": 6473,
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": "2026-11-27T09:39:25.185Z",
+      "moonEpoch": null,
+      "camera": {
+        "x": 0,
+        "y": 0.4492529737540238,
+        "z": 7.787051545069749,
+        "targetX": 0,
+        "targetY": 0,
+        "targetZ": 0
+      },
+      "transitioning": false
+    },
+    "moon": {
+      "ready": true,
+      "view": "earth",
+      "planet": null,
+      "fps": 25,
+      "drawCalls": 5,
+      "triangles": 22728,
+      "systems": 4865,
+      "planets": 6473,
+      "solarEpoch": "2026-11-26T00:00:00.000Z",
+      "issEpoch": null,
+      "moonEpoch": "2026-12-18T03:00:00.000Z",
       "camera": {
         "x": 0,
         "y": 0.4492529737540238,
@@ -1039,8 +1231,9 @@
       "planets": 6473,
       "solarEpoch": "2027-01-03T00:00:00.000Z",
       "issEpoch": null,
+      "moonEpoch": null,
       "camera": {
-        "x": -8.650450142977329,
+        "x": -8.650450142977336,
         "y": 38.55296224662774,
         "z": 41.3622873440765,
         "targetX": 0,
@@ -1053,15 +1246,16 @@
       "ready": true,
       "view": "neighbourhood",
       "planet": null,
-      "fps": 58,
+      "fps": 60,
       "drawCalls": 3,
       "triangles": 2,
       "systems": 4865,
       "planets": 6473,
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
+      "moonEpoch": null,
       "camera": {
-        "x": -7.221232264275757e-18,
+        "x": -7.388311224025913e-20,
         "y": 7.000000000000002,
         "z": 43.999999999999986,
         "targetX": 0,
@@ -1074,13 +1268,14 @@
       "ready": true,
       "view": "lookback",
       "planet": "TRAPPIST-1 e",
-      "fps": 60,
+      "fps": 59,
       "drawCalls": 3,
       "triangles": 722,
       "systems": 4865,
       "planets": 6473,
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
+      "moonEpoch": null,
       "camera": {
         "x": 40.70286419357998,
         "y": -3.692278068855854,
@@ -1095,17 +1290,18 @@
       "ready": true,
       "view": "atlas",
       "planet": null,
-      "fps": 56,
+      "fps": 59,
       "drawCalls": 6,
       "triangles": 2,
       "systems": 4865,
       "planets": 6473,
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
+      "moonEpoch": null,
       "camera": {
-        "x": -0.406797607919964,
-        "y": 1.0367376317400554,
-        "z": 17.96551393055943,
+        "x": -0.43867013534349825,
+        "y": 1.036737631740055,
+        "z": 17.964763944880872,
         "targetX": 0,
         "targetY": 0,
         "targetZ": 0
@@ -1118,17 +1314,18 @@
       "ready": true,
       "view": "planet",
       "planet": "TRAPPIST-1 e",
-      "fps": 14,
+      "fps": 22,
       "drawCalls": 4,
       "triangles": 26498,
       "systems": 4865,
       "planets": 6473,
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
+      "moonEpoch": null,
       "camera": {
-        "x": -0.0000010932159212392606,
-        "y": 0.4499999999999993,
-        "z": 7.12300811313926,
+        "x": -7.172243606752919e-7,
+        "y": 0.4499999999999998,
+        "z": 7.123008113139315,
         "targetX": 0,
         "targetY": 0,
         "targetZ": 0
@@ -1141,6 +1338,9 @@
     "desktop-earth-iss-method.png",
     "desktop-earth-iss-reduced-motion.png",
     "desktop-earth-iss.png",
+    "desktop-earth-moon-method.png",
+    "desktop-earth-moon-reduced-motion.png",
+    "desktop-earth-moon.png",
     "desktop-earth.png",
     "desktop-evidence.png",
     "desktop-gaia-method.png",
@@ -1159,6 +1359,7 @@
     "desktop-solar-time.png",
     "desktop-solar.png",
     "desktop-static-earth-iss.png",
+    "desktop-static-earth-moon.png",
     "desktop-static-earth.png",
     "desktop-static-fallback.png",
     "desktop-static-neighbourhood.png",
@@ -1167,6 +1368,7 @@
     "desktop-system.png",
     "mobile-atlas.png",
     "mobile-earth-iss.png",
+    "mobile-earth-moon.png",
     "mobile-earth.png",
     "mobile-evidence.png",
     "mobile-gaia-method.png",

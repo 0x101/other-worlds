@@ -3,8 +3,10 @@ import type { Catalogue, PlanetRow, ViewName } from '../types';
 import { GOLDEN_PLANET, VIEW_CONTEXT, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
 import { GAIA_BY_ID, GAIA_NEIGHBOURHOOD, type GaiaStar } from '../lib/gaia';
 import { DEFAULT_ISS_EPOCH } from '../lib/iss';
+import { DEFAULT_MOON_EPOCH } from '../lib/moon';
 import SolarTimeControls from './SolarTimeControls';
 import IssExpedition from './IssExpedition';
+import MoonExpedition from './MoonExpedition';
 
 interface ExpeditionProps {
   catalogue: Catalogue;
@@ -13,6 +15,7 @@ interface ExpeditionProps {
   gaiaStar: GaiaStar | null;
   solarEpoch: string;
   issEpoch: string | null;
+  moonEpoch: string | null;
   solarPlaying: boolean;
   reducedMotion: boolean;
   staticMode: boolean;
@@ -21,6 +24,7 @@ interface ExpeditionProps {
   onGaiaSelect: (star: GaiaStar | null) => void;
   onSolarEpoch: (epoch: string) => void;
   onIssEpoch: (epoch: string | null) => void;
+  onMoonEpoch: (epoch: string | null) => void;
   onSolarPlayingChange: (playing: boolean) => void;
 }
 
@@ -33,7 +37,7 @@ function Context({ view }: { view: ViewName }) {
   );
 }
 
-export default function Expedition({ catalogue, view, planet, gaiaStar, solarEpoch, issEpoch, solarPlaying, reducedMotion, staticMode, onView, onSelect, onGaiaSelect, onSolarEpoch, onIssEpoch, onSolarPlayingChange }: ExpeditionProps) {
+export default function Expedition({ catalogue, view, planet, gaiaStar, solarEpoch, issEpoch, moonEpoch, solarPlaying, reducedMotion, staticMode, onView, onSelect, onGaiaSelect, onSolarEpoch, onIssEpoch, onMoonEpoch, onSolarPlayingChange }: ExpeditionProps) {
   if (view === 'earth') {
     return (
       <>
@@ -43,11 +47,17 @@ export default function Expedition({ catalogue, view, planet, gaiaStar, solarEpo
           <p>One rocky world around one ordinary star.<br />Every journey outward begins here.</p>
           <div className="expedition-actions">
             <button className="primary-button" onClick={() => onView('solar')}>Leave Earth <ArrowRight size={18} /></button>
-            {!issEpoch && <button className="text-button iss-open" onClick={() => onIssEpoch(DEFAULT_ISS_EPOCH)}>Meet the ISS <ArrowUpRight size={15} /></button>}
+            {!issEpoch && !moonEpoch && (
+              <>
+                <button className="text-button iss-open" onClick={() => onIssEpoch(DEFAULT_ISS_EPOCH)}>Meet the ISS <ArrowUpRight size={15} /></button>
+                <button className="text-button moon-open" onClick={() => onMoonEpoch(DEFAULT_MOON_EPOCH)}>Meet the Moon <ArrowUpRight size={15} /></button>
+              </>
+            )}
             <button className="text-button" onClick={() => onView('atlas')}>Explore the exoplanet atlas <ArrowUpRight size={15} /></button>
           </div>
         </section>
         {issEpoch && <IssExpedition epoch={issEpoch} staticMode={staticMode} onEpoch={onIssEpoch} onClose={() => onIssEpoch(null)} />}
+        {moonEpoch && <MoonExpedition epoch={moonEpoch} staticMode={staticMode} onEpoch={onMoonEpoch} onClose={() => onMoonEpoch(null)} />}
         <div className="earth-credit">NASA Blue Marble · composite imagery, not a live cloud view</div>
         <Context view={view} />
       </>

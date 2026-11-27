@@ -94,4 +94,16 @@ import { DEFAULT_JOURNEY, journeySearch, parseJourney } from './urlState';
     expect(parseJourney('?view=solar&iss=2026-11-27T09%3A39%3A25.185Z').issEpoch).toBeNull();
     expect(journeySearch({ ...selected, view: 'solar' })).toBe('?view=solar');
   });
+
+  it('round-trips Moon time only on Earth and keeps one Earth expedition active', () => {
+    const selected = { ...DEFAULT_JOURNEY, moonEpoch: '2026-12-18T03:00:00.000Z' };
+    expect(journeySearch(selected)).toBe('?moon=2026-12-18T03%3A00%3A00.000Z');
+    expect(parseJourney(journeySearch(selected))).toEqual(selected);
+    expect(parseJourney('?moon=invalid')).toEqual({ ...DEFAULT_JOURNEY, moonEpoch: '2026-12-18T00:00:00.000Z' });
+    expect(parseJourney('?moon=2026-12-20T00%3A00%3A00.000Z').moonEpoch).toBe('2026-12-18T00:00:00.000Z');
+    expect(parseJourney('?view=solar&moon=2026-12-18T03%3A00%3A00.000Z').moonEpoch).toBeNull();
+    expect(journeySearch({ ...selected, view: 'solar' })).toBe('?view=solar');
+    expect(parseJourney('?iss=2026-11-27T09%3A39%3A25.185Z&moon=2026-12-18T03%3A00%3A00.000Z')).toMatchObject({ issEpoch: '2026-11-27T09:39:25.185Z', moonEpoch: null });
+    expect(journeySearch({ ...selected, issEpoch: '2026-11-27T09:39:25.185Z' })).toBe('?iss=2026-11-27T09%3A39%3A25.185Z');
+  });
 });
