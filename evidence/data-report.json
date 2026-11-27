@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-26T20:44:11.029Z",
+  "validatedAt": "2026-11-27T02:58:02.808Z",
   "passed": true,
   "base": {
     "rows": 6473,
@@ -16,6 +16,23 @@
     "normalizedSha256": "7fc79edab2eb43dd2d8fe040f7c898377ebc9ed036b9b0495917a3455167efb1",
     "comparedValues": 84149,
     "comparedNormalizedCells": 440164
+  },
+  "gaia": {
+    "rows": 384,
+    "uniqueSourceIds": 384,
+    "rawSha256": "b61bb8e0d0f5ab33117e29959471fee7bb608981efc410da3e42de96b8b257dc",
+    "referenceEpoch": {
+      "value": 2016,
+      "label": "J2016.0",
+      "timeScale": "TCB"
+    },
+    "minimumParallaxMas": 70.04028478108923,
+    "minimumParallaxOverError": 438.1772,
+    "distanceRangePc": [
+      1.8281064,
+      14.2755337
+    ],
+    "exactRawRuntimeMatch": true
   },
   "referenceWorlds": [
     "TRAPPIST-1 e",

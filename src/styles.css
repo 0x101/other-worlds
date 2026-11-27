@@ -429,6 +429,32 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .static-lookback { display: grid; place-items: center; }
 .static-home-path { width: 1px; height: 38vh; background: linear-gradient(transparent, var(--p-accent)); opacity: .28; }
 .static-home-sun { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--p-paper); box-shadow: 0 0 40px 14px oklch(0.77 0.075 75 / .34); }
+.gaia-method { max-width: 430px; margin-top: 14px; color: var(--text-muted); font-size: 10px; }
+.gaia-method summary { display: inline-flex; align-items: center; min-height: 34px; cursor: pointer; color: var(--text-muted); font-size: 10px; letter-spacing: .06em; list-style-position: inside; }
+.gaia-method > div { position: relative; max-height: 220px; margin-top: 8px; padding: 14px; overflow-y: auto; border: 1px solid var(--p-line); background: oklch(0.145 0.014 175 / .94); backdrop-filter: blur(18px); }
+.gaia-method p { margin: 0 0 10px; font-size: 10px; line-height: 1.6; }
+.gaia-method p:first-of-type { padding-right: 32px; }
+.gaia-method-close { position: absolute; top: 4px; right: 4px; width: 36px; height: 36px; }
+.gaia-method label { display: grid; gap: 6px; margin-top: 12px; letter-spacing: .04em; }
+.gaia-method select { width: 100%; min-height: 40px; padding: 0 10px; border: 1px solid var(--p-line); border-radius: 0; background: var(--p-ink); color: var(--text); font: inherit; }
+.gaia-method nav { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; }
+.gaia-method a { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; color: var(--accent); text-decoration: none; }
+.gaia-inspector { position: absolute; z-index: 14; top: 21%; right: 3.1vw; width: min(370px, 34vw); padding: 22px; border: 1px solid var(--p-line); background: oklch(0.145 0.014 175 / .88); backdrop-filter: blur(18px); }
+.gaia-inspector > .icon-button { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; }
+.gaia-inspector > strong { display: block; margin: 16px 24px 20px 0; overflow-wrap: anywhere; font-family: var(--font-display); font-size: 27px; font-weight: 400; line-height: 1.05; }
+.gaia-inspector dl { margin: 0 0 16px; }
+.gaia-inspector dl > div { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-top: 1px solid var(--p-line); font-size: 10px; }
+.gaia-inspector dt { color: var(--text-muted); }
+.gaia-inspector dd { margin: 0; text-align: right; }
+.gaia-inspector dd small { display: block; margin-top: 3px; color: var(--text-muted); }
+.gaia-inspector > span:last-child { color: var(--p-faint); font-size: 8px; letter-spacing: .1em; }
+.static-neighbourhood .gaia-star { cursor: pointer; }
+/* A transformed ancestor would make the fixed method sheet relative to the copy, not the viewport. */
+.view-neighbourhood .expedition-copy { animation: none; }
+
+@media (min-width: 641px) {
+  .gaia-method > div { position: fixed; z-index: 30; right: 3.1vw; bottom: 88px; width: min(430px, 40vw); max-height: 60vh; margin-top: 0; background: var(--p-ink); }
+}
 
 @media (max-width: 900px) {
   .expedition-copy { width: 43vw; }
@@ -463,4 +489,15 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .static-earth { width: 74vmin; height: 74vmin; margin: 18vh 0 0; }
   .static-solar svg, .static-neighbourhood svg { transform: scale(1.45); }
   .atlas-return { min-height: 40px; font-size: 11px; }
+  .view-neighbourhood .expedition-copy { top: 11%; animation: none; }
+  .view-neighbourhood .expedition-copy h1 { margin: 10px 0 12px; font-size: 52px; }
+  .view-neighbourhood .expedition-actions { margin-top: 14px; }
+  .gaia-method { margin-top: 8px; }
+  .gaia-method summary { min-height: 44px; }
+  .gaia-method > div { position: fixed; z-index: 30; left: 16px; right: 16px; bottom: 88px; max-height: 54vh; background: var(--p-ink); }
+  .gaia-method-close { width: 44px; height: 44px; }
+  .gaia-inspector { top: auto; left: 16px; right: 16px; bottom: 88px; width: auto; max-height: 52vh; padding: 16px 18px; overflow-y: auto; background: var(--p-ink); }
+  .gaia-inspector > .icon-button { top: 4px; right: 4px; width: 44px; height: 44px; }
+  .gaia-inspector > strong { margin-top: 12px; margin-bottom: 14px; font-size: 23px; }
+  .gaia-inspector dl > div { padding: 6px 0; }
 }

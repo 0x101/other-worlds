@@ -13,6 +13,7 @@
     "data:fetch:traceability": "node scripts/fetch-traceability.mjs",
     "data:validate": "node scripts/validate-data.mjs",
     "data:solar": "node scripts/build-solar-snapshot.mjs",
+    "data:gaia": "node scripts/fetch-gaia-neighbourhood.mjs",
     "validate:browser": "node scripts/validate-browser.mjs"
   },
   "dependencies": {

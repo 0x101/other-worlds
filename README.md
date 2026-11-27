@@ -1,8 +1,8 @@
 # Other Worlds
 
-A locally runnable, continuous cosmic journey built with React, TypeScript, Vite, and Three.js. It opens at **Earth**, travels through a fixed-epoch **Solar System** and an explicitly interim neighbourhood of real exoplanet hosts, arrives at **TRAPPIST-1 e**, and looks back toward home. The complete exoplanet atlas remains available as **Explore**, using the same renderer and URL state.
+A locally runnable, continuous cosmic journey built with React, TypeScript, Vite, and Three.js. It opens at **Earth**, travels through a fixed-epoch **Solar System** and a quality-filtered **Gaia DR3 neighbourhood** with real exoplanet-host lights, arrives at **TRAPPIST-1 e**, and looks back toward home. The complete exoplanet atlas remains available as **Explore**, using the same renderer and URL state.
 
-The included NASA Exoplanet Archive snapshot contains **6,473 unique planets in 4,865 systems**. It is preserved data, not a live or complete current census.
+The included NASA Exoplanet Archive snapshot contains **6,473 unique planets in 4,865 systems**. It is preserved data, not a live or complete current census. A separate Gaia snapshot contains **384 unique nearby sources** with published geometric-distance intervals.
 
 ## Run
 
@@ -20,7 +20,7 @@ Open `http://localhost:7100/`. The Vite `dev` script forwards host and port argu
 ```bash
 npm test
 npm run build
-npm run data:validate                    # full base/companion/raw integrity audit
+npm run data:validate                    # NASA + Gaia raw/runtime integrity audit
 npm run validate:browser                 # development server, then stops it
 node scripts/validate-browser.mjs --preview  # production dist, then stops it
 ```
@@ -36,12 +36,13 @@ A separate 3.5 MiB columnar companion adds source uncertainties, limit flags, pe
 The golden route is:
 
 ```text
-Earth → Solar System → nearby hosts → TRAPPIST-1 system → TRAPPIST-1 e → look back home
+Earth → Solar System → Gaia neighbourhood + nearby hosts → TRAPPIST-1 system → TRAPPIST-1 e → look back home
 ```
 
 - Earth uses a locally bundled, Three.js-packaged NASA Blue Marble composite, explicitly not a live cloud view.
 - `src/data/solar-system.json` holds eight Astronomy Engine 2.1.19 heliocentric positions for `2026-11-26T00:00:00.000Z`, with source EQJ/J2000 and display ECL/J2000 vectors in au. `npm run data:solar` deliberately regenerates this fixed snapshot. Distances and body sizes are visually compressed and disclosed.
-- The first neighbourhood is the 96 nearest exoplanet-host systems with complete positive archive distances and directions. It is **not Gaia and not a complete stellar census**. Missing geometry is excluded, not invented.
+- `src/data/gaia-neighbourhood.json` holds 384 quality-filtered Gaia DR3 sources at J2016.0 / TCB, retrieved through the ARI Gaia Archive partner on `2026-11-27T00:33:19.000Z`. Exact string source IDs, parallax/error, proper motions, photometry, quality fields, and Bailer–Jones geometric posterior distances with 16th–84th-percentile intervals are retained. The raw CSV, SHA-256, exact ADQL, endpoint, units, and display transformations are preserved; distances are not `1000 / parallax`.
+- The neighbourhood overlays the 96 nearest NASA exoplanet-host systems with complete positive archive distances and directions as larger selectable lights. This independent overlay is not a Gaia crossmatch, and neither layer is a complete stellar census. Missing geometry is excluded, not invented.
 - Look-back uses the selected host's archive direction and distance to face the Sun and unresolved Earth. It is a schematic, not an observed view.
 
 To intentionally refresh the NASA snapshots:
@@ -56,9 +57,12 @@ npm run build
 
 A NASA refresh replaces the snapshot with a new full real response and refuses suspiciously small or duplicate-containing responses. Review and commit the resulting data and provenance together.
 
+To intentionally refresh the bounded Gaia slice, run `npm run data:gaia`. It makes one 120-second-bounded ARI TAP request and validates the complete response before replacing the raw CSV, runtime manifest, and `gaia-dr3-neighbourhood-query.sql`. To rebuild deterministically from the preserved raw response instead, use `npm run data:gaia -- --input data/raw/gaia-dr3-neighbourhood.csv --retrieved-at 2026-11-27T00:33:19.000Z`. Review and commit all three outputs together.
+
 ## Controls and sharing
 
 - Leave Earth, enter the Solar System, travel to nearby suns, plot the TRAPPIST-1 course, approach the world, then look back, resume the portrait, or return home.
+- In the neighbourhood, select a Gaia point or choose its exact source ID from the method panel to inspect its published distance interval and astrometry. NASA host lights retain planet-system picking priority.
 - Explore opens the full atlas without abandoning the continuous application. Drag the atlas, Solar System, or planet to orbit; scroll/pinch to travel where enabled.
 - Search by planet or host; filter by derived rocky/giant class, archive equilibrium-temperature band, transit flag, or distance. Select a result or 3D target, choose a sibling world, then approach the planet.
 - Wonder gives concise, evidence-bound explanations; three curated journeys resolve only real catalogue entries.
@@ -77,4 +81,4 @@ A NASA refresh replaces the snapshot with a new full real response and refuses s
 - [Validation results and limitations](docs/VALIDATION.md)
 - [Credits](CREDITS.md)
 
-This is a vertical slice, not a complete Gaia neighbourhood, live ephemeris, habitability assessment, or observed surface atlas. Exoplanet surfaces, clouds, atmospheric color/thickness, orbital phases, and some layout fallbacks are explicitly illustrative.
+This is a vertical slice, not a complete stellar census, live ephemeris, habitability assessment, or observed surface atlas. Exoplanet surfaces, clouds, atmospheric color/thickness, orbital phases, and some layout fallbacks are explicitly illustrative.

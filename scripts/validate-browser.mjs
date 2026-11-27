@@ -1,13 +1,27 @@
 import { spawn, execFileSync } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from '@playwright/test';
+import * as THREE from 'three';
 
 const root = process.cwd();
 const mode = process.argv.includes('--preview') ? 'preview' : 'development';
 const evidenceDir = path.join(root, 'evidence');
 const base = 'http://127.0.0.1:7100';
+const gaia = JSON.parse(await readFile(path.join(root, 'src/data/gaia-neighbourhood.json'), 'utf8'));
+const projectionCamera = new THREE.PerspectiveCamera(46, 1440 / 960, 0.1, 500);
+projectionCamera.position.set(0, 7, 44);
+projectionCamera.lookAt(0, 0, 0);
+projectionCamera.updateMatrixWorld();
+const gaiaClickTarget = gaia.stars.map((star) => {
+  const ra = star.ra * Math.PI / 180;
+  const dec = star.dec * Math.PI / 180;
+  const radius = 5 + Math.log10(star.r_med_geo + 1) * 13;
+  const point = new THREE.Vector3(radius * Math.cos(dec) * Math.cos(ra), radius * Math.sin(dec), radius * Math.cos(dec) * Math.sin(ra)).project(projectionCamera);
+  return { sourceId: star.source_id, x: (point.x + 1) * 720, y: (1 - point.y) * 480, z: point.z };
+}).find((point) => point.x > 800 && point.x < 1320 && point.y > 160 && point.y < 680 && point.z > -1 && point.z < 1);
+if (!gaiaClickTarget) throw new Error('No unobscured Gaia source could be projected for browser picking.');
 const checks = [];
 const consoleErrors = [];
 const pageErrors = [];
@@ -109,8 +123,28 @@ try {
 
   await page.getByRole('button', { name: 'Travel to nearby suns' }).click();
   await ready(page, 'neighbourhood');
-  check('interim neighbourhood is explicitly archive geometry rather than Gaia', await page.getByText('Archive-reported direction and distance · logarithmic display · Gaia layer not yet integrated', { exact: true }).isVisible());
+  check('Gaia neighbourhood discloses ICRS epoch, posterior distances, compression, and incompleteness', await page.getByText('Gaia DR3 direction · geometric posterior distance · logarithmic display · not a complete census', { exact: true }).isVisible() && await page.getByText('Gaia DR3 neighbourhood / J2016.0', { exact: true }).isVisible());
+  await noOverflow(page, 'desktop Gaia neighbourhood');
   await shot(page, 'desktop-neighbourhood');
+  await page.mouse.click(gaiaClickTarget.x, gaiaClickTarget.y);
+  await page.waitForTimeout(200);
+  check('WebGL picking opens the exact Gaia source inspector', await page.locator('.gaia-inspector').isVisible() && await page.locator('.gaia-inspector').getByText(`Gaia DR3 ${gaiaClickTarget.sourceId}`, { exact: true }).isVisible(), gaiaClickTarget);
+  if (await page.locator('.gaia-inspector').isVisible()) await page.getByRole('button', { name: 'Close Gaia source inspector' }).click();
+  await page.getByText('Catalogue & distance method', { exact: true }).click();
+  const gaiaSelector = page.getByLabel('Inspect by Gaia source ID');
+  check('Gaia audit exposes all 384 exact string source IDs plus an empty choice', await gaiaSelector.locator('option').count() === 385);
+  const desktopGaiaMethodGeometry = await page.evaluate(() => {
+    const panel = document.querySelector('.gaia-method > div').getBoundingClientRect();
+    const course = document.querySelector('.neighbourhood-copy .primary-button').getBoundingClientRect();
+    return { panelTop: panel.top, panelBottom: panel.bottom, panelLeft: panel.left, panelRight: panel.right, courseRight: course.right, viewportWidth: innerWidth, viewportHeight: innerHeight };
+  });
+  check('desktop Gaia method stays inside the viewport and clears the course action', desktopGaiaMethodGeometry.panelTop >= 0 && desktopGaiaMethodGeometry.panelBottom <= desktopGaiaMethodGeometry.viewportHeight && desktopGaiaMethodGeometry.panelRight <= desktopGaiaMethodGeometry.viewportWidth && desktopGaiaMethodGeometry.panelLeft >= desktopGaiaMethodGeometry.courseRight, desktopGaiaMethodGeometry);
+  await shot(page, 'desktop-gaia-method');
+  await gaiaSelector.selectOption('4472832130942575872');
+  check('source-ID inspection retains published geometric distance and parallax uncertainty', await page.locator('.gaia-inspector').isVisible() && await page.locator('.gaia-inspector').getByText('Gaia DR3 4472832130942575872', { exact: true }).isVisible() && await page.locator('.gaia-inspector').getByText('546.976 ± 0.040 mas', { exact: true }).isVisible() && await page.locator('.gaia-inspector').getByText('1.8280–1.8282', { exact: true }).isVisible());
+  check('source selection closes the method panel without losing the inspector', !await page.locator('.gaia-method').evaluate((element) => element.open) && await page.locator('.gaia-inspector').isVisible());
+  await shot(page, 'desktop-gaia-source');
+  await page.getByRole('button', { name: 'Close Gaia source inspector' }).click();
   performance.neighbourhood = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__ }));
 
   await page.getByRole('button', { name: 'Plot course for TRAPPIST-1' }).click();
@@ -282,6 +316,36 @@ try {
   await noOverflow(phone, 'mobile Earth');
   check('mobile opens on Earth with its primary departure action', await phone.getByRole('button', { name: 'Leave Earth' }).isVisible());
   await shot(phone, 'mobile-earth');
+  await phone.getByRole('button', { name: 'Leave Earth' }).click();
+  await ready(phone, 'solar');
+  await phone.getByRole('button', { name: 'Travel to nearby suns' }).click();
+  await ready(phone, 'neighbourhood');
+  await noOverflow(phone, 'mobile Gaia neighbourhood');
+  check('mobile Gaia neighbourhood keeps its journey and catalogue controls visible', await phone.getByRole('button', { name: 'Plot course for TRAPPIST-1' }).isVisible() && await phone.getByText('Catalogue & distance method', { exact: true }).isVisible());
+  await shot(phone, 'mobile-neighbourhood');
+  await phone.getByText('Catalogue & distance method', { exact: true }).click();
+  const mobileGaiaMethodGeometry = await phone.evaluate(() => {
+    const panel = document.querySelector('.gaia-method > div').getBoundingClientRect();
+    const course = document.querySelector('.neighbourhood-copy .primary-button').getBoundingClientRect();
+    return { panelTop: panel.top, panelBottom: panel.bottom, panelLeft: panel.left, panelRight: panel.right, courseBottom: course.bottom, viewportWidth: innerWidth, viewportHeight: innerHeight };
+  });
+  check('mobile Gaia method clears the course action and stays inside the viewport', mobileGaiaMethodGeometry.panelTop >= mobileGaiaMethodGeometry.courseBottom && mobileGaiaMethodGeometry.panelBottom <= mobileGaiaMethodGeometry.viewportHeight && mobileGaiaMethodGeometry.panelLeft >= 0 && mobileGaiaMethodGeometry.panelRight <= mobileGaiaMethodGeometry.viewportWidth, mobileGaiaMethodGeometry);
+  await shot(phone, 'mobile-gaia-method');
+  await phone.getByRole('button', { name: 'Close catalogue and distance method' }).click();
+  check('mobile Gaia method has a working explicit dismissal', !await phone.locator('.gaia-method').evaluate((element) => element.open));
+  await phone.getByText('Catalogue & distance method', { exact: true }).click();
+  await phone.getByLabel('Inspect by Gaia source ID').selectOption('4472832130942575872');
+  check('mobile source selection opens a bounded readable inspector', await phone.locator('.gaia-inspector').isVisible() && await phone.locator('.gaia-inspector').evaluate((element) => { const box = element.getBoundingClientRect(); return box.top >= 0 && box.bottom <= window.innerHeight && box.left >= 0 && box.right <= window.innerWidth; }));
+  const mobileGaiaGeometry = await phone.evaluate(() => {
+    const inspector = document.querySelector('.gaia-inspector').getBoundingClientRect();
+    const course = document.querySelector('.neighbourhood-copy .primary-button').getBoundingClientRect();
+    return { inspectorTop: inspector.top, courseBottom: course.bottom };
+  });
+  check('mobile Gaia inspector does not cover the primary course action', mobileGaiaGeometry.inspectorTop >= mobileGaiaGeometry.courseBottom, mobileGaiaGeometry);
+  await shot(phone, 'mobile-gaia-source');
+  await phone.getByRole('button', { name: 'Close Gaia source inspector' }).click();
+  await phone.goto(base, { waitUntil: 'networkidle' });
+  await ready(phone, 'earth');
   await phone.getByRole('button', { name: 'Explore the exoplanet atlas' }).click();
   await ready(phone, 'atlas');
   await noOverflow(phone, 'mobile atlas');
@@ -345,6 +409,11 @@ try {
   await ready(quiet, 'solar');
   check('reduced-motion disables the journey transition', await quiet.locator('.journey-wipe').evaluate((element) => getComputedStyle(element).display === 'none'));
   await shot(quiet, 'desktop-solar-reduced-motion');
+  await quiet.getByRole('button', { name: 'Travel to nearby suns' }).click();
+  await ready(quiet, 'neighbourhood');
+  await noOverflow(quiet, 'reduced-motion Gaia neighbourhood');
+  check('reduced-motion retains the complete Gaia scene and source audit', await quiet.locator('.gaia-method').isVisible() && await quiet.getByRole('button', { name: 'Plot course for TRAPPIST-1' }).isVisible());
+  await shot(quiet, 'desktop-neighbourhood-reduced-motion');
   await quiet.goto(`${base}/?planet=HD+189733+b&view=planet&az=0&el=0.08`, { waitUntil: 'networkidle' });
   await ready(quiet, 'planet');
   check('gas giant receives bands, never solid terrain', await quiet.getByText(/Illustrative atmosphere · seed/).isVisible());
@@ -378,6 +447,15 @@ try {
   await fallbackPage.getByRole('button', { name: 'Leave Earth' }).click();
   await fallbackPage.locator('.static-solar').waitFor();
   check('no-WebGL journey reaches the Solar System', await fallbackPage.locator('.app').getAttribute('data-view') === 'solar' && await fallbackPage.locator('.static-solar').isVisible());
+  await fallbackPage.getByRole('button', { name: 'Travel to nearby suns' }).click();
+  await fallbackPage.locator('.static-neighbourhood').waitFor();
+  check('no-WebGL Gaia fallback renders all 384 traceable sources', await fallbackPage.locator('.static-neighbourhood .gaia-star').count() === 384 && await fallbackPage.locator('.static-neighbourhood .gaia-star title').first().evaluate((element) => /^Gaia DR3 \d+:/.test(element.textContent ?? '')));
+  await noOverflow(fallbackPage, 'no-WebGL Gaia neighbourhood');
+  await shot(fallbackPage, 'desktop-static-neighbourhood');
+  await fallbackPage.getByText('Catalogue & distance method', { exact: true }).click();
+  await fallbackPage.getByLabel('Inspect by Gaia source ID').selectOption('4472832130942575872');
+  check('no-WebGL source selector retains the scientific inspector', await fallbackPage.locator('.gaia-inspector').getByText('Gaia DR3 4472832130942575872', { exact: true }).isVisible());
+  await fallbackPage.getByRole('button', { name: 'Close Gaia source inspector' }).click();
   await fallbackPage.goto(`${base}/?planet=TRAPPIST-1+e&view=planet&az=0&el=0.08`, { waitUntil: 'networkidle' });
   await fallbackPage.locator('.static-planet').waitFor();
   check('no-WebGL fallback renders a still reconstruction', await fallbackPage.getByTestId('static-scene').isVisible());

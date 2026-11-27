@@ -5,6 +5,7 @@ import type { CameraViewState, Catalogue, PlanetRow, ViewName } from '../types';
 import { displayOrbit, generateWorld, seededRandom } from '../lib/world';
 import { hashString, skyPosition } from '../lib/catalogue';
 import { hostColor, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
+import { GAIA_NEIGHBOURHOOD, gaiaDisplayColour, gaiaDisplayPosition, type GaiaStar } from '../lib/gaia';
 
 interface SceneProps {
   catalogue: Catalogue;
@@ -14,6 +15,7 @@ interface SceneProps {
   reducedMotion: boolean;
   lowPower: boolean;
   onSelect: (planet: PlanetRow) => void;
+  onGaiaSelect: (star: GaiaStar) => void;
   onCameraChange: (camera: CameraViewState) => void;
   onReady: () => void;
   onFailure: () => void;
@@ -21,6 +23,7 @@ interface SceneProps {
 
 interface EngineCallbacks {
   onSelect: (planet: PlanetRow) => void;
+  onGaiaSelect: (star: GaiaStar) => void;
   onCameraChange: (camera: CameraViewState) => void;
   onFailure: () => void;
 }
@@ -289,12 +292,15 @@ class WorldEngine {
       this.raycaster.setFromCamera(this.pointer, this.camera);
       this.raycaster.params.Points.threshold = this.currentView === 'atlas' ? 0.55 : this.currentView === 'neighbourhood' ? 0.45 : 0.2;
       const intersections = this.raycaster.intersectObjects(this.content.children, true);
+      let gaiaStar: GaiaStar | undefined;
       for (const intersection of intersections) {
         if (intersection.object instanceof THREE.Points && intersection.index !== undefined && (this.currentView === 'atlas' || this.currentView === 'neighbourhood')) {
-          const names = intersection.object.userData.systems as string[];
-          const host = names[intersection.index];
+          const names = intersection.object.userData.systems as string[] | undefined;
+          const host = names?.[intersection.index];
           const planet = host ? this.catalogue.systems.get(host)?.[0] : undefined;
           if (planet) { this.callbacks.onSelect(planet); return; }
+          const stars = intersection.object.userData.gaiaStars as GaiaStar[] | undefined;
+          if (this.currentView === 'neighbourhood' && stars?.[intersection.index]) gaiaStar ??= stars[intersection.index];
         }
         const name = intersection.object.userData.planetName as string | undefined;
         if (name) {
@@ -302,6 +308,7 @@ class WorldEngine {
           if (planet) { this.callbacks.onSelect(planet); return; }
         }
       }
+      if (gaiaStar) this.callbacks.onGaiaSelect(gaiaStar);
     });
   }
 
@@ -378,20 +385,38 @@ class WorldEngine {
   }
 
   private buildNeighbourhood(): void {
+    const stars = GAIA_NEIGHBOURHOOD.stars;
+    const gaiaPositions = new Float32Array(stars.length * 3);
+    const gaiaColors = new Float32Array(stars.length * 3);
+    stars.forEach((star, index) => {
+      const position = gaiaDisplayPosition(star);
+      const color = new THREE.Color(gaiaDisplayColour(star.bp_rp));
+      gaiaPositions.set([position.x, position.y, position.z], index * 3);
+      gaiaColors.set([color.r, color.g, color.b], index * 3);
+    });
+    const gaiaGeometry = new THREE.BufferGeometry();
+    gaiaGeometry.setAttribute('position', new THREE.BufferAttribute(gaiaPositions, 3));
+    gaiaGeometry.setAttribute('color', new THREE.BufferAttribute(gaiaColors, 3));
+    const gaiaPoints = new THREE.Points(gaiaGeometry, new THREE.PointsMaterial({ size: 0.48, map: this.spriteTexture, vertexColors: true, transparent: true, opacity: 0.88, alphaTest: 0.035, depthWrite: false }));
+    gaiaPoints.name = 'gaia-dr3-neighbourhood';
+    gaiaPoints.userData.gaiaStars = stars;
+    this.content.add(gaiaPoints);
+
     const hosts = nearbyHosts(this.catalogue);
     const positions = new Float32Array(hosts.length * 3);
     const colors = new Float32Array(hosts.length * 3);
     const names: string[] = [];
     hosts.forEach((host, index) => {
       positions.set([host.position.x, host.position.y, host.position.z], index * 3);
-      const color = new THREE.Color(hostColor(host)).lerp(new THREE.Color(0xaebbb1), 0.28);
+      const color = new THREE.Color(hostColor(host)).lerp(new THREE.Color(0xf1dec0), 0.2);
       colors.set([color.r, color.g, color.b], index * 3);
       names.push(host.planet.hostname);
     });
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    const points = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.68, map: this.spriteTexture, vertexColors: true, transparent: true, opacity: 0.96, alphaTest: 0.035, depthWrite: false }));
+    const points = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.82, map: this.spriteTexture, vertexColors: true, transparent: true, opacity: 0.98, alphaTest: 0.035, depthWrite: false }));
+    points.name = 'nasa-exoplanet-hosts';
     points.userData.systems = names;
     this.content.add(points);
     const home = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.spriteTexture, color: 0xe5c49a, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -747,6 +772,7 @@ export default function Scene(props: SceneProps) {
     try {
       engineRef.current = new WorldEngine(containerRef.current, props.catalogue, {
         onSelect: (planet) => latest.current.onSelect(planet),
+        onGaiaSelect: (star) => latest.current.onGaiaSelect(star),
         onCameraChange: (camera) => latest.current.onCameraChange(camera),
         onFailure: () => latest.current.onFailure(),
       }, props.reducedMotion, props.lowPower);

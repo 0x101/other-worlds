@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { buildSnapshot } from './fetch-gaia-neighbourhood.mjs';
 
 const root = process.cwd();
 const read = async (relative) => readFile(path.join(root, relative), 'utf8');
@@ -18,6 +19,12 @@ const traceRaw = JSON.parse(traceText);
 const normalizedText = await read('public/data/pscomppars-traceability.json');
 const normalized = JSON.parse(normalizedText);
 const traceProvenance = await json('public/data/traceability-provenance.json');
+const gaiaText = await read('data/raw/gaia-dr3-neighbourhood.csv');
+const gaia = await json('src/data/gaia-neighbourhood.json');
+const expectedGaia = buildSnapshot(gaiaText, gaia.retrievedAt);
+assert(JSON.stringify(gaia) === JSON.stringify(expectedGaia), 'Gaia runtime snapshot does not exactly match its raw CSV, query, and transformations.');
+assert(gaia.rawSha256 === sha256(gaiaText), 'Gaia raw snapshot hash mismatch.');
+assert(await read('gaia-dr3-neighbourhood-query.sql') === `${gaia.query};\n`, 'Gaia query file differs from the manifest.');
 
 assert(sha256(baseText) === '6bcd8b57617226da328e85bee5c2955755ee054ed4d775dd43f03855cb2cb362', 'The preserved base snapshot hash changed.');
 assert(base.length === 6473 && base.length === baseProvenance.rowCount, 'Base row count does not match the verified snapshot.');
@@ -56,6 +63,16 @@ const report = {
   passed: true,
   base: { rows: base.length, planets: baseByName.size, systems: new Set(base.map((row) => row.hostname)).size, sha256: sha256(baseText), preserved: true },
   traceability: { rawRows: traceRaw.length, normalizedRows: normalized.rows.length, references: normalized.references.length, rawSha256: sha256(traceText), normalizedSha256: sha256(normalizedText), comparedValues, comparedNormalizedCells },
+  gaia: {
+    rows: gaia.rowCount,
+    uniqueSourceIds: new Set(gaia.stars.map((star) => star.source_id)).size,
+    rawSha256: gaia.rawSha256,
+    referenceEpoch: gaia.referenceEpoch,
+    minimumParallaxMas: Math.min(...gaia.stars.map((star) => star.parallax)),
+    minimumParallaxOverError: Math.min(...gaia.stars.map((star) => star.parallax_over_error)),
+    distanceRangePc: [Math.min(...gaia.stars.map((star) => star.r_med_geo)), Math.max(...gaia.stars.map((star) => star.r_med_geo))],
+    exactRawRuntimeMatch: true,
+  },
   referenceWorlds,
   missingValuePolicy: 'All compared nulls remained null. No zero substitution or interpolation was applied.',
 };

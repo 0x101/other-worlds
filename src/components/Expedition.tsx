@@ -1,13 +1,16 @@
-import { ArrowLeft, ArrowRight, ArrowUpRight, Home } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Home, X } from 'lucide-react';
 import type { Catalogue, PlanetRow, ViewName } from '../types';
 import { GOLDEN_PLANET, SOLAR_SNAPSHOT, VIEW_CONTEXT, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
+import { GAIA_BY_ID, GAIA_NEIGHBOURHOOD, type GaiaStar } from '../lib/gaia';
 
 interface ExpeditionProps {
   catalogue: Catalogue;
   view: ViewName;
   planet: PlanetRow | null;
+  gaiaStar: GaiaStar | null;
   onView: (view: ViewName) => void;
   onSelect: (planet: PlanetRow) => void;
+  onGaiaSelect: (star: GaiaStar | null) => void;
 }
 
 function Context({ view }: { view: ViewName }) {
@@ -19,7 +22,7 @@ function Context({ view }: { view: ViewName }) {
   );
 }
 
-export default function Expedition({ catalogue, view, planet, onView, onSelect }: ExpeditionProps) {
+export default function Expedition({ catalogue, view, planet, gaiaStar, onView, onSelect, onGaiaSelect }: ExpeditionProps) {
   if (view === 'earth') {
     return (
       <>
@@ -64,19 +67,52 @@ export default function Expedition({ catalogue, view, planet, onView, onSelect }
   if (view === 'neighbourhood') {
     const hosts = nearbyHosts(catalogue);
     const destination = catalogue.byName.get(GOLDEN_PLANET);
+    const stars = GAIA_NEIGHBOURHOOD.stars;
     return (
       <>
         <section className="expedition-copy neighbourhood-copy">
           <button className="back-button" onClick={() => onView('solar')}><ArrowLeft size={16} />Back to the Solar System</button>
-          <span className="section-label">Nearby exoplanet hosts / NASA snapshot</span>
+          <span className="section-label">Gaia DR3 neighbourhood / J2016.0</span>
           <h1>Other suns.<br /><em>Real directions.</em></h1>
-          <p>The {hosts.length} nearest exoplanet-host systems here have complete archive positions. This is not a complete stellar census.</p>
+          <p>{stars.length} nearby stars with high-confidence Gaia astrometry. Larger lights mark {hosts.length} exoplanet hosts from the preserved NASA snapshot.</p>
           <div className="expedition-actions">
             {destination && <button className="primary-button" onClick={() => onSelect(destination)}>Plot course for TRAPPIST-1 <ArrowRight size={18} /></button>}
             <button className="text-button" onClick={() => onView('atlas')}>Open the full exoplanet atlas <ArrowUpRight size={15} /></button>
           </div>
+          <details className="gaia-method">
+            <summary>Catalogue &amp; distance method</summary>
+            <div>
+              <button className="icon-button gaia-method-close" onClick={(event) => event.currentTarget.closest('details')?.removeAttribute('open')} aria-label="Close catalogue and distance method"><X size={14} /></button>
+              <p>Largest-parallax sources inside a 20 pc gate, with G ≤ 12, parallax S/N ≥ 20, RUWE ≤ 1.4, at least 10 visibility periods, and five-parameter solutions. This is not a complete census.</p>
+              <p>Positions are ICRS-aligned at J2016.0. Distances are Bailer–Jones geometric posterior medians with 16th–84th percentile intervals—not direct parallax inversion. Colour and point size are display encodings.</p>
+              <label>Inspect by Gaia source ID
+                <select value={gaiaStar?.source_id ?? ''} onChange={(event) => {
+                  onGaiaSelect(GAIA_BY_ID.get(event.target.value) ?? null);
+                  event.currentTarget.closest('details')?.removeAttribute('open');
+                }}>
+                  <option value="">Choose one of {stars.length} sources</option>
+                  {stars.map((star) => <option key={star.source_id} value={star.source_id}>{star.source_id} · {star.r_med_geo.toFixed(2)} pc</option>)}
+                </select>
+              </label>
+              <nav aria-label="Gaia scientific sources"><a href={GAIA_NEIGHBOURHOOD.source.catalogueDocumentation} target="_blank" rel="noreferrer">Gaia DR3 documentation <ArrowUpRight size={12} /></a><a href={GAIA_NEIGHBOURHOOD.source.distanceReference} target="_blank" rel="noreferrer">Distance method <ArrowUpRight size={12} /></a></nav>
+            </div>
+          </details>
         </section>
-        <div className="expedition-disclosure">Archive-reported direction and distance · logarithmic display · Gaia layer not yet integrated</div>
+        {gaiaStar && (
+          <aside className="gaia-inspector" aria-label="Selected Gaia source" aria-live="polite">
+            <button className="icon-button" onClick={() => onGaiaSelect(null)} aria-label="Close Gaia source inspector"><X size={15} /></button>
+            <span className="section-label">MEASURED ASTROMETRY · DERIVED DISTANCE</span>
+            <strong>Gaia DR3 {gaiaStar.source_id}</strong>
+            <dl>
+              <div><dt>Distance</dt><dd>{gaiaStar.r_med_geo.toFixed(4)} pc <small>{gaiaStar.r_lo_geo.toFixed(4)}–{gaiaStar.r_hi_geo.toFixed(4)}</small></dd></div>
+              <div><dt>Parallax</dt><dd>{gaiaStar.parallax.toFixed(3)} ± {gaiaStar.parallax_error.toFixed(3)} mas</dd></div>
+              <div><dt>Gaia G / BP−RP</dt><dd>{gaiaStar.phot_g_mean_mag.toFixed(2)} / {gaiaStar.bp_rp.toFixed(2)} mag</dd></div>
+              <div><dt>RUWE / visibility</dt><dd>{gaiaStar.ruwe.toFixed(2)} / {gaiaStar.visibility_periods_used} periods</dd></div>
+            </dl>
+            <span>J2016.0 · TCB · ICRS-aligned</span>
+          </aside>
+        )}
+        <div className="expedition-disclosure">Gaia DR3 direction · geometric posterior distance · logarithmic display · not a complete census</div>
         <Context view={view} />
       </>
     );

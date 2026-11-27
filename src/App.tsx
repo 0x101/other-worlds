@@ -15,6 +15,7 @@ import { parseTraceability, validateTraceability } from './lib/traceability';
 import { DEFAULT_JOURNEY, parseJourney, updateBrowserUrl } from './lib/urlState';
 import { formatValue, generateWorld } from './lib/world';
 import { lookBackGeometry } from './lib/goldenPath';
+import { GAIA_NEIGHBOURHOOD, type GaiaStar } from './lib/gaia';
 
 function positionLabel(view: ViewName, planet: PlanetRow | null): string {
   if (view === 'system') return planet?.hostname ?? 'Exoplanet system';
@@ -23,7 +24,7 @@ function positionLabel(view: ViewName, planet: PlanetRow | null): string {
   return {
     earth: 'Earth / you are here',
     solar: 'Solar System / fixed epoch',
-    neighbourhood: 'Nearby exoplanet hosts',
+    neighbourhood: 'Gaia neighbourhood / J2016.0',
     atlas: 'Observed sky / archive snapshot',
     system: 'Exoplanet system',
     planet: 'Planet portrait',
@@ -43,12 +44,14 @@ export default function App() {
   const [sceneReady, setSceneReady] = useState(false);
   const [sceneFailed, setSceneFailed] = useState(false);
   const [journeysOpen, setJourneysOpen] = useState(false);
+  const [selectedGaia, setSelectedGaia] = useState<GaiaStar | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [lowPower] = useState(() => window.innerWidth < 700 || (navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4));
 
   const navigate = useCallback((patch: Partial<JourneyState>, mode: 'push' | 'replace' = 'push') => {
     const next = { ...journeyRef.current, ...patch };
+    if (patch.view && patch.view !== journeyRef.current.view) setSelectedGaia(null);
     journeyRef.current = next;
     setJourney(next);
     updateBrowserUrl(next, mode);
@@ -177,12 +180,13 @@ export default function App() {
           reducedMotion={reducedMotion}
           lowPower={lowPower}
           onSelect={selectPlanet}
+          onGaiaSelect={setSelectedGaia}
           onCameraChange={(camera) => navigate({ camera }, 'replace')}
           onReady={() => setSceneReady(true)}
           onFailure={() => { setSceneFailed(true); setSceneReady(true); }}
         />
       )}
-      {catalogue && sceneFailed && <StaticScene catalogue={catalogue} view={journey.view} planet={selected} onSelect={selectPlanet} />}
+      {catalogue && sceneFailed && <StaticScene catalogue={catalogue} view={journey.view} planet={selected} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} />}
       <div className="scene-vignette" aria-hidden="true" />
 
       <header className="app-header">
@@ -194,7 +198,7 @@ export default function App() {
         <nav className="header-actions" aria-label="View actions">
           {hasWorld && selected && <button className="text-button evidence-open" onClick={() => openExperience('observatory')}>Evidence</button>}
           {hasWorld && selected && <button className="icon-button" onClick={openShare} aria-label="Share this world"><Share2 size={18} /></button>}
-          {provenance && <a className="source-link" href={provenance.sourceUrl} target="_blank" rel="noreferrer">NASA / TAP <ArrowUpRight size={14} /></a>}
+          {provenance && <a className="source-link" href={journey.view === 'neighbourhood' ? GAIA_NEIGHBOURHOOD.source.catalogueDocumentation : provenance.sourceUrl} target="_blank" rel="noreferrer">{journey.view === 'neighbourhood' ? 'GAIA / DR3' : 'NASA / TAP'} <ArrowUpRight size={14} /></a>}
         </nav>
       </header>
 
@@ -217,7 +221,7 @@ export default function App() {
         </section>
       )}
 
-      {catalogue && <Expedition catalogue={catalogue} view={journey.view} planet={selected} onView={goToView} onSelect={selectPlanet} />}
+      {catalogue && <Expedition catalogue={catalogue} view={journey.view} planet={selected} gaiaStar={selectedGaia} onView={goToView} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} />}
 
       {catalogue && journey.view === 'atlas' && (
         <>

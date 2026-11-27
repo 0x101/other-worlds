@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-26T20:49:37.769Z",
+  "validatedAt": "2026-11-27T03:05:44.971Z",
   "mode": "preview",
   "baseUrl": "http://127.0.0.1:7100",
   "checks": [
@@ -39,7 +39,55 @@
       }
     },
     {
-      "name": "interim neighbourhood is explicitly archive geometry rather than Gaia",
+      "name": "Gaia neighbourhood discloses ICRS epoch, posterior distances, compression, and incompleteness",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "desktop Gaia neighbourhood: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 960,
+        "scrollHeight": 960
+      }
+    },
+    {
+      "name": "WebGL picking opens the exact Gaia source inspector",
+      "pass": true,
+      "details": {
+        "sourceId": "1926461164913660160",
+        "x": 960.5651368428032,
+        "y": 245.49702295136115,
+        "z": 0.9958385095390594
+      }
+    },
+    {
+      "name": "Gaia audit exposes all 384 exact string source IDs plus an empty choice",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "desktop Gaia method stays inside the viewport and clears the course action",
+      "pass": true,
+      "details": {
+        "panelTop": 620,
+        "panelBottom": 872,
+        "panelLeft": 965.375,
+        "panelRight": 1395.375,
+        "courseRight": 280.890625,
+        "viewportWidth": 1440,
+        "viewportHeight": 960
+      }
+    },
+    {
+      "name": "source-ID inspection retains published geometric distance and parallax uncertainty",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "source selection closes the method panel without losing the inspector",
       "pass": true,
       "details": null
     },
@@ -311,6 +359,52 @@
       "details": null
     },
     {
+      "name": "mobile Gaia neighbourhood: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      }
+    },
+    {
+      "name": "mobile Gaia neighbourhood keeps its journey and catalogue controls visible",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "mobile Gaia method clears the course action and stays inside the viewport",
+      "pass": true,
+      "details": {
+        "panelTop": 456,
+        "panelBottom": 724,
+        "panelLeft": 16,
+        "panelRight": 359,
+        "courseBottom": 409.125,
+        "viewportWidth": 375,
+        "viewportHeight": 812
+      }
+    },
+    {
+      "name": "mobile Gaia method has a working explicit dismissal",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "mobile source selection opens a bounded readable inspector",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "mobile Gaia inspector does not cover the primary course action",
+      "pass": true,
+      "details": {
+        "inspectorTop": 429.953125,
+        "courseBottom": 409.125
+      }
+    },
+    {
       "name": "mobile atlas: no page overflow",
       "pass": true,
       "details": {
@@ -456,6 +550,21 @@
       "details": null
     },
     {
+      "name": "reduced-motion Gaia neighbourhood: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800,
+        "scrollHeight": 800
+      }
+    },
+    {
+      "name": "reduced-motion retains the complete Gaia scene and source audit",
+      "pass": true,
+      "details": null
+    },
+    {
       "name": "gas giant receives bands, never solid terrain",
       "pass": true,
       "details": null
@@ -484,6 +593,26 @@
     },
     {
       "name": "no-WebGL journey reaches the Solar System",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no-WebGL Gaia fallback renders all 384 traceable sources",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no-WebGL Gaia neighbourhood: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800,
+        "scrollHeight": 800
+      }
+    },
+    {
+      "name": "no-WebGL source selector retains the scientific inspector",
       "pass": true,
       "details": null
     },
@@ -548,13 +677,13 @@
       "ready": true,
       "view": "earth",
       "planet": null,
-      "fps": 31,
+      "fps": 32,
       "drawCalls": 2,
       "triangles": 20896,
       "systems": 4865,
       "planets": 6473,
       "resources": 12,
-      "transferBytes": 2221955
+      "transferBytes": 2280693
     },
     "solar": {
       "ready": true,
@@ -570,8 +699,8 @@
       "ready": true,
       "view": "neighbourhood",
       "planet": null,
-      "fps": 58,
-      "drawCalls": 2,
+      "fps": 60,
+      "drawCalls": 3,
       "triangles": 2,
       "systems": 4865,
       "planets": 6473
@@ -596,13 +725,13 @@
       "systems": 4865,
       "planets": 6473,
       "resources": 13,
-      "transferBytes": 2222255
+      "transferBytes": 2280993
     },
     "planet": {
       "ready": true,
       "view": "planet",
       "planet": "TRAPPIST-1 e",
-      "fps": 26,
+      "fps": 24,
       "drawCalls": 4,
       "triangles": 26498,
       "systems": 4865,
@@ -613,9 +742,12 @@
     "desktop-atlas.png",
     "desktop-earth.png",
     "desktop-evidence.png",
+    "desktop-gaia-method.png",
+    "desktop-gaia-source.png",
     "desktop-gas-giant-reduced-motion.png",
     "desktop-journeys.png",
     "desktop-lookback.png",
+    "desktop-neighbourhood-reduced-motion.png",
     "desktop-neighbourhood.png",
     "desktop-planet.png",
     "desktop-share-field-note.png",
@@ -625,11 +757,15 @@
     "desktop-solar.png",
     "desktop-static-earth.png",
     "desktop-static-fallback.png",
+    "desktop-static-neighbourhood.png",
     "desktop-static-share.png",
     "desktop-system.png",
     "mobile-atlas.png",
     "mobile-earth.png",
     "mobile-evidence.png",
+    "mobile-gaia-method.png",
+    "mobile-gaia-source.png",
+    "mobile-neighbourhood.png",
     "mobile-planet.png",
     "mobile-share.png",
     "responsive-1024-atlas.png",

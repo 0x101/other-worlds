@@ -13,7 +13,7 @@ A quiet deep-space observatory with editorial typography. The interface frames o
 
 - Earth opens the experience with an unmistakable You Are Here frame and a locally bundled NASA Blue Marble composite, explicitly not live clouds.
 - The Solar System uses eight modelled positions at one explicit instant. The planets, enlarged glyphs, logarithmic distance rings, and Earth marker form a readable family portrait without pretending to be a to-scale orrery.
-- The interim neighbourhood contains real exoplanet-host directions only. It is labeled as a NASA archive subset, not Gaia or a complete stellar census.
+- The neighbourhood combines 384 quality-filtered Gaia DR3 sources with 96 larger NASA exoplanet-host lights. Real J2016.0 directions, published geometric distances, exact source inspection, and explicit incompleteness replace a decorative or improvised starfield.
 - Atlas points represent real host systems, not random catalogue entries. RA/Dec and logarithmically compressed distance inform positions when present.
 - The exoplanet system is an orrery with eccentricity-influenced ellipses, deterministic phases, and a highlighted selected world. Distances and body sizes are intentionally compressed.
 - Planet portraits use function-generated shader noise. Gas and ice giants use warped atmospheric bands and deterministic storm systems; sub-Neptune worlds use layered cloud decks and currents; unresolved worlds use a restrained cloud veil; only rocky worlds receive terrain-like color relief. Hot rocky worlds may include explicitly illustrative emissive fractures.

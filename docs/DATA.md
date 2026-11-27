@@ -46,11 +46,18 @@ Limit flags are shown as archive-reported upper/lower-limit metadata. Uncertaint
 - No light-time or aberration correction is claimed.
 - Display radius is `3.8 + ln(1 + au) × 6.2` scene units. Body glyphs are enlarged and rings are guides, not complete orbital paths.
 
-### Interim neighbourhood and look-back
+### Gaia DR3 neighbourhood, NASA host overlay, and look-back
 
-The neighbourhood selects the 96 nearest unique exoplanet hosts having complete RA/Dec and a positive finite `sy_dist`. Direction and parsec distance come from the preserved NASA snapshot; display radius is `5 + log10(distancePc + 1) × 13`. Rows with missing or invalid geometry are excluded, never assigned a default distance. No additional epoch or proper-motion propagation is invented.
+The neighbourhood's stellar layer is a bounded, quality-filtered Gaia DR3 snapshot, not a random starfield or a complete census.
 
-This is explicitly **an interim exoplanet-host layer, not Gaia DR3 and not a complete stellar census**. The Gaia gate remains open until a real, quality-filtered Gaia subset retains source IDs, J2016.0 semantics, parallax/error, quality fields, retrieval provenance, and transformations.
+- **Publisher and access:** ESA Gaia data processed by DPAC, retrieved through the ARI Gaia Archive partner TAP endpoint `https://gaia.ari.uni-heidelberg.de/tap/sync` at `2026-11-27T00:33:19.000Z`.
+- **Preserved evidence:** `data/raw/gaia-dr3-neighbourhood.csv` is the raw CSV response, SHA-256 `b61bb8e0d0f5ab33117e29959471fee7bb608981efc410da3e42de96b8b257dc`. `gaia-dr3-neighbourhood-query.sql` and the runtime manifest retain the exact ADQL. `src/data/gaia-neighbourhood.json` records endpoint, retrieval time, source tables, units, epoch, frame, origin, transformations, and all 384 rows.
+- **Selection:** the largest-parallax 384 rows inside a 50 mas / 20 pc gate, with parallax S/N ≥ 20, RUWE ≤ 1.4, at least 10 visibility periods, five-parameter solution 31, G ≤ 12, non-null BP−RP and proper motions, and valid ordered distance intervals. Ordering is descending parallax with exact source ID as the tie-breaker. Brightness, quality, and row-limit selections preclude a completeness claim.
+- **Identity and astrometry:** Gaia source IDs remain exact decimal strings. DR3 retains the EDR3 astrometry and source list. Directions are ICRS-aligned at J2016.0 / TCB; no proper-motion propagation or parallax zero-point correction is applied.
+- **Distance:** `gaiaedr3_complements.distances` supplies Bailer–Jones et al. (2021) geometric posterior medians (`r_med_geo`) and 16th/84th-percentile bounds (`r_lo_geo`, `r_hi_geo`) in parsecs. The inspector displays the published median and interval, never a naive `1000 / parallax` replacement. The reference is https://doi.org/10.3847/1538-3881/abd806.
+- **Display transform:** direction is `(cos(dec)cos(ra), sin(dec), cos(dec)sin(ra))`; radius is `5 + log10(r_med_geo + 1) × 13` scene units. BP−RP alone drives the disclosed display colour ramp; G is retained for selection and inspection. These are visual encodings, not resolved stellar images or physical scene distances.
+
+An independent overlay selects the 96 nearest unique NASA exoplanet hosts having complete RA/Dec and a positive finite `sy_dist`. Direction and parsec distance come from the preserved NASA snapshot; display radius is `5 + log10(distancePc + 1) × 13`. Rows with missing or invalid geometry are excluded, never assigned a default distance. The larger host lights are not represented as a Gaia crossmatch and retain system-picking priority. Every Gaia point also has an exact-ID DOM selector and an inspector for distance, parallax/error, photometry, RUWE, visibility, epoch, time scale, and frame.
 
 Look-back places the observer along the selected host's archive direction, facing the Sun at the local origin. The archive distance remains available in parsecs, but the display distance is compressed. Earth is unresolved and the scene is a schematic direction home, not an observed view. Missing geometry disables the action with an explanation.
 
