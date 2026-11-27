@@ -13,6 +13,7 @@
     "data:fetch:traceability": "node scripts/fetch-traceability.mjs",
     "data:validate": "node scripts/validate-data.mjs",
     "data:solar": "node scripts/build-solar-snapshot.mjs",
+    "data:iss": "node scripts/build-iss-expedition.mjs",
     "data:gaia": "node scripts/fetch-gaia-neighbourhood.mjs",
     "validate:browser": "node scripts/validate-browser.mjs"
   },
@@ -24,6 +25,7 @@
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "satellite.js": "7.2.0",
     "three": "^0.180.0"
   },
   "devDependencies": {

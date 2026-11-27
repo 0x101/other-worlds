@@ -6,6 +6,7 @@ import { displayOrbit, generateWorld, seededRandom } from '../lib/world';
 import { hashString, skyPosition } from '../lib/catalogue';
 import { hostColor, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
 import { GAIA_NEIGHBOURHOOD, gaiaDisplayColour, gaiaDisplayPosition, type GaiaStar } from '../lib/gaia';
+import { issStateAt, issTraceAt } from '../lib/iss';
 
 interface SceneProps {
   catalogue: Catalogue;
@@ -13,6 +14,7 @@ interface SceneProps {
   planet: PlanetRow | null;
   cameraState: CameraViewState;
   solarEpoch: string;
+  issEpoch: string | null;
   reducedMotion: boolean;
   lowPower: boolean;
   onSelect: (planet: PlanetRow) => void;
@@ -229,6 +231,7 @@ class WorldEngine {
   private currentView: ViewName = 'earth';
   private currentPlanet: PlanetRow | null = null;
   private currentSolarEpoch = '';
+  private currentIssEpoch: string | null = null;
   private catalogue: Catalogue;
   private callbacks: EngineCallbacks;
   private reducedMotion: boolean;
@@ -354,6 +357,71 @@ class WorldEngine {
     const sunlight = new THREE.DirectionalLight(0xfff1da, 3.2);
     sunlight.position.set(-4, 2.5, 5);
     this.content.add(sunlight);
+    if (this.currentIssEpoch) this.buildIss();
+    this.updateEarthDisplayScale();
+  }
+
+  private updateEarthDisplayScale(): void {
+    // The portrait frustum is narrower than the fixed-ratio orbit display; fit both without moving the camera.
+    const scale = this.container.clientWidth < 700 && this.currentIssEpoch ? 0.74 : 1;
+    for (const name of ['earth-globe', 'earth-atmosphere', 'iss-expedition']) {
+      this.content.getObjectByName(name)?.scale.setScalar(scale);
+    }
+  }
+
+  private buildIss(): void {
+    if (!this.currentIssEpoch || this.content.getObjectByName('iss-expedition')) return;
+    const group = new THREE.Group();
+    group.name = 'iss-expedition';
+    group.position.x = this.container.clientWidth < 700 ? 0 : 1.05;
+    const trace = new THREE.Line(
+      new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({ color: 0xc3b18e, transparent: true, opacity: 0.34, depthWrite: false }),
+    );
+    trace.name = 'iss-derived-trace';
+    group.add(trace);
+    const marker = new THREE.Mesh(new THREE.SphereGeometry(0.1, 20, 14), new THREE.MeshBasicMaterial({ color: 0xf4d7a1 }));
+    marker.name = 'iss-derived-marker';
+    group.add(marker);
+    const markerRing = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.012, 8, 40), new THREE.MeshBasicMaterial({ color: 0xdac39e, transparent: true, opacity: 0.8, depthWrite: false }));
+    markerRing.name = 'iss-derived-marker-ring';
+    group.add(markerRing);
+    this.content.add(group);
+    this.updateIssGroup(group);
+  }
+
+  private updateIssGroup(group: THREE.Group): void {
+    if (!this.currentIssEpoch) return;
+    const state = issStateAt(this.currentIssEpoch);
+    const position = new THREE.Vector3(state.displayPosition.x, state.displayPosition.y, state.displayPosition.z);
+    this.content.getObjectByName('iss-derived-marker')?.position.copy(position);
+    this.content.getObjectByName('iss-derived-marker-ring')?.position.copy(position);
+    const trace = this.content.getObjectByName('iss-derived-trace');
+    if (trace instanceof THREE.Line) trace.geometry.setFromPoints(issTraceAt(this.currentIssEpoch).map((point) => new THREE.Vector3(point.x, point.y, point.z)));
+    group.userData.temeKm = state.temeKm;
+    this.container.dataset.issTemeKm = state.temeKm.join(',');
+  }
+
+  setIssEpoch(epoch: string | null): void {
+    this.currentIssEpoch = epoch;
+    if (epoch) this.container.dataset.issEpoch = epoch;
+    else {
+      delete this.container.dataset.issEpoch;
+      delete this.container.dataset.issTemeKm;
+    }
+    if (this.currentView !== 'earth') return;
+    const group = this.content.getObjectByName('iss-expedition');
+    if (!epoch) {
+      if (group instanceof THREE.Group) {
+        this.content.remove(group);
+        disposeGroup(group);
+      }
+      this.updateEarthDisplayScale();
+      return;
+    }
+    if (group instanceof THREE.Group) this.updateIssGroup(group);
+    else this.buildIss();
+    this.updateEarthDisplayScale();
   }
 
   private buildSolar(): void {
@@ -458,7 +526,7 @@ class WorldEngine {
     this.content.add(path);
   }
 
-  setView(view: ViewName, planet: PlanetRow | null, solarEpoch: string): void {
+  setView(view: ViewName, planet: PlanetRow | null, solarEpoch: string, issEpoch: string | null): void {
     const instant = this.reducedMotion || !this.ready;
     const previous = this.content;
     this.scene.remove(previous);
@@ -480,6 +548,12 @@ class WorldEngine {
     this.scene.add(this.content);
     this.currentView = view;
     this.currentPlanet = planet;
+    this.currentIssEpoch = view === 'earth' ? issEpoch : null;
+    if (this.currentIssEpoch) this.container.dataset.issEpoch = this.currentIssEpoch;
+    else {
+      delete this.container.dataset.issEpoch;
+      delete this.container.dataset.issTemeKm;
+    }
     this.setSolarEpoch(solarEpoch);
     this.controls.autoRotate = view === 'atlas' && !this.reducedMotion;
     this.controls.autoRotateSpeed = 0.12;
@@ -713,8 +787,11 @@ class WorldEngine {
       const centerX = width < 700 ? 0 : 1.05;
       const globe = this.content.getObjectByName('earth-globe');
       const atmosphere = this.content.getObjectByName('earth-atmosphere');
+      const iss = this.content.getObjectByName('iss-expedition');
       if (globe) globe.position.x = centerX;
       if (atmosphere) atmosphere.position.x = centerX;
+      if (iss) iss.position.x = centerX;
+      this.updateEarthDisplayScale();
     }
   }
 
@@ -756,6 +833,7 @@ class WorldEngine {
         systems: this.catalogue.systems.size,
         planets: this.catalogue.planets.length,
         solarEpoch: this.currentSolarEpoch,
+        issEpoch: this.currentIssEpoch,
         camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z, targetX: this.controls.target.x, targetY: this.controls.target.y, targetZ: this.controls.target.z },
         transitioning: this.transition !== null,
       };
@@ -775,6 +853,7 @@ class WorldEngine {
         systems: this.catalogue.systems.size,
         planets: this.catalogue.planets.length,
         solarEpoch: this.currentSolarEpoch,
+        issEpoch: this.currentIssEpoch,
         camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z, targetX: this.controls.target.x, targetY: this.controls.target.y, targetZ: this.controls.target.z },
         transitioning: this.transition !== null,
       };
@@ -810,7 +889,7 @@ export default function Scene(props: SceneProps) {
         onCameraChange: (camera) => latest.current.onCameraChange(camera),
         onFailure: () => latest.current.onFailure(),
       }, props.reducedMotion, props.lowPower);
-      engineRef.current.setView(props.view, props.planet, props.solarEpoch);
+      engineRef.current.setView(props.view, props.planet, props.solarEpoch, props.issEpoch);
       props.onReady();
     } catch (error) {
       console.warn('WebGL scene unavailable; using static reconstruction.', error);
@@ -825,13 +904,17 @@ export default function Scene(props: SceneProps) {
   }, []);
 
   useEffect(() => {
-    engineRef.current?.setView(props.view, props.planet, props.solarEpoch);
+    engineRef.current?.setView(props.view, props.planet, props.solarEpoch, props.issEpoch);
     if (props.view === 'planet') engineRef.current?.setCamera(props.cameraState);
   }, [props.view, props.planet, props.catalogue]);
 
   useEffect(() => {
     engineRef.current?.setSolarEpoch(props.solarEpoch);
   }, [props.solarEpoch]);
+
+  useEffect(() => {
+    engineRef.current?.setIssEpoch(props.issEpoch);
+  }, [props.issEpoch]);
 
   useEffect(() => {
     engineRef.current?.setCamera(props.cameraState);

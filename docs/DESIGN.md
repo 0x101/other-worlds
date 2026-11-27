@@ -12,6 +12,7 @@ A quiet deep-space observatory with editorial typography. The interface frames o
 ## Scene language
 
 - Earth opens the experience with an unmistakable You Are Here frame and a locally bundled NASA Blue Marble composite, explicitly not live clouds.
+- Meet the ISS opens a compact historical-orbit instrument within the same Earth scene. A warm marker and fine local trace make the selected instant legible without replacing the globe, resetting the camera, or resembling an unsolicited live tracker. Exact epoch, source, staleness, frame, and radial exaggeration remain available in the instrument's method sheet.
 - The Solar System uses eight modelled positions at one explicit selected instant. The planets, enlarged glyphs, logarithmic distance rings, and Earth marker form a readable family portrait without pretending to be a to-scale orrery. A compact edge instrument controls UTC date steps and optional model-time playback without disturbing the camera; reduced motion keeps only explicit steps.
 - The neighbourhood combines 384 quality-filtered Gaia DR3 sources with 96 larger NASA exoplanet-host lights. Real J2016.0 directions, published geometric distances, exact source inspection, and explicit incompleteness replace a decorative or improvised starfield.
 - Atlas points represent real host systems, not random catalogue entries. RA/Dec and logarithmically compressed distance inform positions when present.
@@ -49,6 +50,7 @@ The same near-black green, warm paper, Instrument Serif, Manrope, and fine-line 
 - View changes use a 1.7 s eased camera interpolation and a brief scene veil.
 - UI hover, focus, panel, and search transitions are short and interruptible; only transform and opacity are animated.
 - Atlas auto-rotation is slow and disabled for reduced motion. The close planet has no time-dependent texture rotation, so identical state reproduces the same world and camera.
+- The ISS expedition has no automatic playback. Its previous/source/next controls are explicit historical-time steps in every motion preference; reduced motion removes panel animation without removing those controls.
 - `prefers-reduced-motion` removes CSS animation, scene auto-rotation, damping, and camera tweens. Destinations remain immediately usable.
 - Mobile removes the planet-intro transform animation because it otherwise creates a containing block for fixed back navigation; a browser regression check covers this.
 
@@ -57,5 +59,6 @@ The same near-black green, warm paper, Instrument Serif, Manrope, and fine-line 
 - Semantic HTML carries all names, values, controls, and evidence independently of WebGL.
 - Search and system sibling buttons are DOM alternatives to 3D picking.
 - The primary mobile action is at least 44 px high; filters remain horizontally scrollable inside their own dock rather than overflowing the page.
+- The open phone ISS instrument remains below the Earth narrative and above the composite-image credit. Its close, previous, next, and reset controls retain 44 px targets. A uniform `0.74` display scale on the phone's Earth/atmosphere/ISS objects keeps the marker inside the narrow frustum without changing physical values, object ratios, camera coordinates, or the ordinary closed-Earth composition.
 - Visible focus rings, Escape/backdrop/close-button dismissal, empty results, status announcements, and retryable errors are included.
 - The static fallback preserves selection, evidence, and sharing even when WebGL cannot initialize.

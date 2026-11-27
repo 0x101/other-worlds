@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-27T16:03:36.291Z",
+  "validatedAt": "2026-11-27T21:00:08.692Z",
   "passed": true,
   "base": {
     "rows": 6473,
@@ -32,6 +32,27 @@
     "selectedEpochProbe": "2027-01-02T00:00:00.000Z",
     "lightTimeCorrection": false,
     "aberrationCorrection": false
+  },
+  "iss": {
+    "object": "ISS (ZARYA)",
+    "noradCatalogueId": "25544",
+    "rawSha256": "c624f089e59c598a1355cf34f3f6e5030262ee7f6c9d770186dfea6788bf46be",
+    "sourceEpoch": "2026-11-27T09:29:25.185696Z",
+    "retrievedAt": "2026-11-27T19:21:43.000Z",
+    "selectedEpochWindowUtc": [
+      "2026-11-26T21:29:25.185Z",
+      "2026-11-27T21:29:25.185Z"
+    ],
+    "propagator": "satellite.js 7.2.0",
+    "units": "km",
+    "frame": "TEME",
+    "exactRawOmmMatch": true,
+    "exactReferenceMatch": true,
+    "selectedEpochProbe": "2026-11-27T09:39:25.185Z",
+    "historical": true,
+    "liveRefresh": false,
+    "lightTimeCorrection": false,
+    "uncertainty": null
   },
   "gaia": {
     "rows": 384,

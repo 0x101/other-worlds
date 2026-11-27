@@ -1,0 +1,91 @@
+{
+  "schema": "other-worlds/iss-expedition-v1",
+  "status": "DERIVED",
+  "snapshotStatus": "HISTORICAL",
+  "object": {
+    "name": "ISS (ZARYA)",
+    "internationalDesignator": "1998-067A",
+    "noradCatalogueId": "25544"
+  },
+  "source": {
+    "publisher": "CelesTrak",
+    "requestUrl": "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=json-pretty",
+    "documentationUrl": "https://celestrak.org/NORAD/documentation/gp-data-formats.php",
+    "format": "OMM JSON-PRETTY",
+    "retrievedAt": "2026-11-27T19:21:43.000Z",
+    "retrievalTimestampBasis": "Local preservation time; upstream response headers were not retained.",
+    "rawPath": "data/raw/iss-omm.json",
+    "rawSha256": "c624f089e59c598a1355cf34f3f6e5030262ee7f6c9d770186dfea6788bf46be",
+    "sourceEpoch": "2026-11-27T09:29:25.185696Z",
+    "timeSystem": "UTC",
+    "referenceFrame": "TEME",
+    "meanElementTheory": "SGP4",
+    "semanticsNote": "CelesTrak omits redundant mandatory OMM fields from JSON; Earth centre, TEME, UTC, and SGP4 semantics follow its GP format documentation."
+  },
+  "propagator": {
+    "name": "satellite.js",
+    "version": "7.2.0",
+    "license": "MIT",
+    "url": "https://github.com/shashwatak/satellite-js"
+  },
+  "elements": {
+    "OBJECT_NAME": "ISS (ZARYA)",
+    "OBJECT_ID": "1998-067A",
+    "EPOCH": "2026-11-27T09:29:25.185696",
+    "MEAN_MOTION": 15.49633135,
+    "ECCENTRICITY": 0.00073872,
+    "INCLINATION": 51.6311,
+    "RA_OF_ASC_NODE": 212.4074,
+    "ARG_OF_PERICENTER": 70.5574,
+    "MEAN_ANOMALY": 289.6212,
+    "EPHEMERIS_TYPE": 0,
+    "CLASSIFICATION_TYPE": "U",
+    "NORAD_CAT_ID": 25544,
+    "ELEMENT_SET_NO": 999,
+    "REV_AT_EPOCH": 59705,
+    "BSTAR": 0.0001007531,
+    "MEAN_MOTION_DOT": 0.00005227,
+    "MEAN_MOTION_DDOT": 0
+  },
+  "position": {
+    "units": "km",
+    "frame": "TEME",
+    "origin": "Earth centre",
+    "lightTimeCorrection": false,
+    "uncertainty": null
+  },
+  "selection": {
+    "defaultEpoch": "2026-11-27T09:29:25.185Z",
+    "minEpoch": "2026-11-26T21:29:25.185Z",
+    "maxEpoch": "2026-11-27T21:29:25.185Z",
+    "stepMinutes": 10,
+    "quantization": "JavaScript UTC milliseconds; the exact microsecond source epoch is retained separately.",
+    "boundNote": "The ±12 h window is an interaction bound, not an accuracy guarantee."
+  },
+  "referencePropagation": {
+    "epoch": "2026-11-27T09:29:25.185Z",
+    "temeKm": [
+      -5736.73520774008,
+      -3641.675924088093,
+      -0.00677716437
+    ],
+    "geocentricDistanceKm": 6794.993331847605
+  },
+  "display": {
+    "direction": "TEME direction preserved",
+    "mapping": "scene (x,y,z) = normalized TEME (x,z,-y)",
+    "radialScale": "Fixed 2.65 scene units around an Earth globe of radius 2; geocentric kilometres remain in the data readout.",
+    "earthTextureRegistration": "The composite Earth texture is not time-registered; no ground track, visibility, or pointing claim is made."
+  },
+  "staleness": {
+    "historical": true,
+    "ageAtRetrievalSeconds": 35537.815,
+    "liveRefresh": false,
+    "note": "This is a preserved historical element set. No current position, runtime refresh, or numeric SGP4 error estimate is supplied."
+  },
+  "trace": {
+    "halfSpanMinutes": 46,
+    "sampleStepMinutes": 2,
+    "note": "A 47-sample local SGP4 trace centred as near as the selection bounds allow; not an observed path."
+  }
+}

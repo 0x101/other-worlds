@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from '@playwright/test';
+import { json2satrec, propagate } from 'satellite.js';
 import * as THREE from 'three';
 
 const root = process.cwd();
@@ -10,6 +11,13 @@ const mode = process.argv.includes('--preview') ? 'preview' : 'development';
 const evidenceDir = path.join(root, 'evidence');
 const base = 'http://127.0.0.1:7100';
 const gaia = JSON.parse(await readFile(path.join(root, 'src/data/gaia-neighbourhood.json'), 'utf8'));
+const iss = JSON.parse(await readFile(path.join(root, 'src/data/iss-expedition.json'), 'utf8'));
+const issSatrec = json2satrec(iss.elements);
+const issVectorAt = (epoch) => {
+  const result = propagate(issSatrec, new Date(epoch));
+  if (!result) throw new Error(`ISS browser reference propagation failed at ${epoch}.`);
+  return [result.position.x, result.position.y, result.position.z];
+};
 const projectionCamera = new THREE.PerspectiveCamera(46, 1440 / 960, 0.1, 500);
 projectionCamera.position.set(0, 7, 44);
 projectionCamera.lookAt(0, 0, 0);
@@ -113,6 +121,42 @@ try {
   await noOverflow(page, 'desktop Earth');
   await shot(page, 'desktop-earth');
   performance.earth = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__, resources: performance.getEntriesByType('resource').length, transferBytes: performance.getEntriesByType('resource').reduce((sum, entry) => sum + (entry.transferSize || 0), 0) }));
+  check('Earth opens without an unsolicited live-style satellite tracker', await page.locator('.iss-expedition').count() === 0 && !page.url().includes('iss='));
+  const cameraBeforeIss = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__.camera }));
+  await page.evaluate(() => { window.__issValidationCanvas = document.querySelector('.scene-canvas canvas'); });
+  await page.getByRole('button', { name: 'Meet the ISS' }).click();
+  await page.waitForFunction((epoch) => document.querySelector('.scene-canvas')?.dataset.issEpoch === epoch, iss.selection.defaultEpoch);
+  await ready(page, 'earth');
+  check('ISS expedition opens at the preserved source epoch with its actual source credit', await page.locator('.iss-selected-time time').getAttribute('datetime') === iss.selection.defaultEpoch && page.url().includes(`iss=${encodeURIComponent(iss.selection.defaultEpoch)}`) && await page.getByRole('link', { name: 'CT / OMM' }).getAttribute('href') === iss.source.requestUrl);
+  check('ISS marker matches independently propagated TEME kilometres without resetting canvas or camera', await page.evaluate(({ expected, before }) => {
+    const actual = document.querySelector('.scene-canvas')?.dataset.issTemeKm?.split(',').map(Number) ?? [];
+    const camera = window.__OTHER_WORLDS__.camera;
+    return expected.length === actual.length && expected.every((value, index) => Math.abs(value - actual[index]) < 0.0000001) && window.__issValidationCanvas === document.querySelector('.scene-canvas canvas') && Object.keys(before).every((key) => Math.abs(camera[key] - before[key]) < 0.000001);
+  }, { expected: issVectorAt(iss.selection.defaultEpoch), before: cameraBeforeIss }));
+  await page.getByRole('button', { name: 'Next 10 minutes' }).click();
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.issEpoch === '2026-11-27T09:39:25.185Z');
+  await ready(page, 'earth');
+  check('ISS ten-minute step updates exact-link state and derived TEME geometry in the existing scene', page.url().includes('iss=2026-11-27T09%3A39%3A25.185Z') && await page.evaluate(({ expected, before }) => {
+    const actual = document.querySelector('.scene-canvas')?.dataset.issTemeKm?.split(',').map(Number) ?? [];
+    const camera = window.__OTHER_WORLDS__.camera;
+    return expected.every((value, index) => Math.abs(value - actual[index]) < 0.0000001) && window.__issValidationCanvas === document.querySelector('.scene-canvas canvas') && Object.keys(before).every((key) => Math.abs(camera[key] - before[key]) < 0.000001);
+  }, { expected: issVectorAt('2026-11-27T09:39:25.185Z'), before: cameraBeforeIss }));
+  await noOverflow(page, 'desktop ISS expedition');
+  await shot(page, 'desktop-earth-iss');
+  const selectedIssUrl = page.url();
+  await page.reload({ waitUntil: 'networkidle' });
+  await ready(page, 'earth');
+  check('ISS exact-link reload restores the open expedition and selected millisecond', page.url() === selectedIssUrl && await page.locator('.iss-selected-time time').getAttribute('datetime') === '2026-11-27T09:39:25.185Z' && await page.evaluate(() => window.__OTHER_WORLDS__?.issEpoch === '2026-11-27T09:39:25.185Z'));
+  await page.getByText('Orbit, staleness & scale', { exact: true }).click();
+  check('ISS source audit exposes exact epoch, historical age, no live refresh, and no invented accuracy bound', await page.getByText('2026-11-27T09:29:25.185696Z', { exact: true }).isVisible() && await page.getByText(/9 h 52 min old when preserved/).isVisible() && await page.getByText(/not an accuracy guarantee/).isVisible() && await page.getByText(/No live position, runtime refresh/).isVisible());
+  await shot(page, 'desktop-earth-iss-method');
+  await page.getByText('Orbit, staleness & scale', { exact: true }).click();
+  performance.iss = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__ }));
+  await page.getByRole('button', { name: 'Reset to ISS source epoch' }).click();
+  await page.waitForFunction((epoch) => document.querySelector('.scene-canvas')?.dataset.issEpoch === epoch, iss.selection.defaultEpoch);
+  check('ISS reset restores the source epoch and disables redundant reset', await page.getByRole('button', { name: 'Reset to ISS source epoch' }).isDisabled() && page.url().includes(`iss=${encodeURIComponent(iss.selection.defaultEpoch)}`));
+  await page.getByRole('button', { name: 'Close ISS expedition' }).click();
+  check('closing the ISS expedition removes its marker and URL state without leaving Earth', await page.locator('.iss-expedition').count() === 0 && !page.url().includes('iss=') && await page.evaluate(() => window.__OTHER_WORLDS__?.view === 'earth' && !document.querySelector('.scene-canvas')?.dataset.issEpoch));
 
   await page.getByRole('button', { name: 'Leave Earth' }).click();
   await ready(page, 'solar');
@@ -152,7 +196,14 @@ try {
   await page.mouse.down();
   await page.mouse.move(1110, 455, { steps: 8 });
   await page.mouse.up();
-  await page.waitForTimeout(2300);
+  await page.evaluate(() => { window.__solarSettleReference = null; });
+  await page.waitForFunction(() => {
+    const current = window.__OTHER_WORLDS__?.camera;
+    if (!current) return false;
+    const previous = window.__solarSettleReference;
+    window.__solarSettleReference = { ...current };
+    return previous && Object.keys(previous).every((key) => Math.abs(current[key] - previous[key]) < 0.0001);
+  }, null, { polling: 2100, timeout: 15000 });
   await ready(page, 'solar');
   const draggedSolarCamera = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__.camera }));
   await page.getByRole('button', { name: 'Next day', exact: true }).click();
@@ -364,6 +415,34 @@ try {
   await noOverflow(phone, 'mobile Earth');
   check('mobile opens on Earth with its primary departure action', await phone.getByRole('button', { name: 'Leave Earth' }).isVisible());
   await shot(phone, 'mobile-earth');
+  await phone.getByRole('button', { name: 'Meet the ISS' }).click();
+  await phone.waitForFunction((epoch) => document.querySelector('.scene-canvas')?.dataset.issEpoch === epoch, iss.selection.defaultEpoch);
+  await phone.getByRole('button', { name: 'Next 10 minutes' }).click();
+  await phone.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.issEpoch === '2026-11-27T09:39:25.185Z');
+  await noOverflow(phone, 'mobile ISS expedition');
+  const mobileIssGeometry = await phone.evaluate(() => {
+    const box = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, width: rect.width, height: rect.height };
+    };
+    return {
+      panel: box('.iss-expedition'),
+      narrative: box('.earth-copy'),
+      primary: box('.earth-copy .primary-button'),
+      credit: box('.earth-credit'),
+      controls: [...document.querySelectorAll('.iss-time-actions button, .iss-heading .icon-button')].map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { label: element.getAttribute('aria-label'), top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, width: rect.width, height: rect.height };
+      }),
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+    };
+  });
+  check('mobile ISS panel and controls stay bounded and clear the Earth narrative, departure action, and credit', mobileIssGeometry.panel.top >= Math.max(mobileIssGeometry.narrative.bottom, mobileIssGeometry.primary.bottom) && mobileIssGeometry.panel.bottom <= mobileIssGeometry.credit.top && mobileIssGeometry.panel.left >= 0 && mobileIssGeometry.panel.right <= mobileIssGeometry.viewportWidth && mobileIssGeometry.panel.bottom <= mobileIssGeometry.viewportHeight && mobileIssGeometry.controls.every((control) => control.top >= mobileIssGeometry.panel.top && control.bottom <= mobileIssGeometry.panel.bottom && control.left >= 0 && control.right <= mobileIssGeometry.viewportWidth && control.width >= 44 && control.height >= 44), mobileIssGeometry);
+  check('mobile ISS manual step preserves the exact selected instant', await phone.locator('.iss-selected-time time').getAttribute('datetime') === '2026-11-27T09:39:25.185Z' && phone.url().includes('iss=2026-11-27T09%3A39%3A25.185Z'));
+  await shot(phone, 'mobile-earth-iss');
+  await phone.getByRole('button', { name: 'Close ISS expedition' }).click();
+  check('mobile ISS closes cleanly before leaving Earth', await phone.locator('.iss-expedition').count() === 0 && !phone.url().includes('iss='));
   await phone.getByRole('button', { name: 'Leave Earth' }).click();
   await ready(phone, 'solar');
   await noOverflow(phone, 'mobile Solar System');
@@ -466,6 +545,14 @@ try {
   watch(quiet, 'reduced-motion');
   await quiet.goto(base, { waitUntil: 'networkidle' });
   await ready(quiet, 'earth');
+  await quiet.getByRole('button', { name: 'Meet the ISS' }).click();
+  await quiet.waitForFunction((epoch) => document.querySelector('.scene-canvas')?.dataset.issEpoch === epoch, iss.selection.defaultEpoch);
+  check('reduced-motion ISS has no playback control or CSS animation', await quiet.getByRole('button', { name: /Play/ }).count() === 0 && await quiet.locator('.iss-expedition').evaluate((element) => getComputedStyle(element).animationName === 'none'));
+  await quiet.getByRole('button', { name: 'Next 10 minutes' }).click();
+  await quiet.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.issEpoch === '2026-11-27T09:39:25.185Z');
+  check('reduced-motion ISS retains explicit ten-minute stepping', await quiet.locator('.iss-selected-time time').getAttribute('datetime') === '2026-11-27T09:39:25.185Z');
+  await shot(quiet, 'desktop-earth-iss-reduced-motion');
+  await quiet.getByRole('button', { name: 'Close ISS expedition' }).click();
   await quiet.getByRole('button', { name: 'Leave Earth' }).click();
   await ready(quiet, 'solar');
   check('reduced-motion disables the journey transition', await quiet.locator('.journey-wipe').evaluate((element) => getComputedStyle(element).display === 'none'));
@@ -509,6 +596,18 @@ try {
   await fallbackPage.locator('.static-earth').waitFor();
   check('no-WebGL cold start renders a still Earth', await fallbackPage.locator('.app').getAttribute('data-view') === 'earth' && await fallbackPage.locator('.static-earth').isVisible());
   await shot(fallbackPage, 'desktop-static-earth');
+  await fallbackPage.getByRole('button', { name: 'Meet the ISS' }).click();
+  await fallbackPage.getByTestId('static-iss').waitFor();
+  const staticIssBefore = await fallbackPage.locator('[data-testid="static-iss"] [data-iss-marker]').getAttribute('data-teme-km');
+  await fallbackPage.getByRole('button', { name: 'Next 10 minutes' }).click();
+  await fallbackPage.waitForFunction((before) => document.querySelector('[data-testid="static-iss"] [data-iss-marker]')?.getAttribute('data-teme-km') !== before, staticIssBefore);
+  check('no-WebGL ISS manual step updates independently propagated TEME geometry and its exact still label', await fallbackPage.locator('[data-testid="static-iss"] [data-iss-marker]').evaluate((element, expected) => {
+    const actual = element.getAttribute('data-teme-km')?.split(',').map(Number) ?? [];
+    return expected.length === actual.length && expected.every((value, index) => Math.abs(value - actual[index]) < 0.0000001);
+  }, issVectorAt('2026-11-27T09:39:25.185Z')) && (await fallbackPage.getByTestId('static-iss').getAttribute('aria-label'))?.includes('09:39:25.185 UTC') && await fallbackPage.locator('.iss-status').getByText(/Still reconstruction/, { exact: false }).isVisible());
+  await noOverflow(fallbackPage, 'no-WebGL ISS expedition');
+  await shot(fallbackPage, 'desktop-static-earth-iss');
+  await fallbackPage.getByRole('button', { name: 'Close ISS expedition' }).click();
   await fallbackPage.getByRole('button', { name: 'Leave Earth' }).click();
   await fallbackPage.locator('.static-solar').waitFor();
   const staticSolarCopy = await fallbackPage.locator('.solar-copy p').textContent();

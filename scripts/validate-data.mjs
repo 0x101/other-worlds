@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { Body, HelioVector, Rotation_EQJ_ECL, RotateVector } from 'astronomy-engine';
+import { json2satrec, propagate } from 'satellite.js';
 import { buildSnapshot } from './fetch-gaia-neighbourhood.mjs';
 
 const root = process.cwd();
@@ -52,6 +53,31 @@ const selectedEpochProbe = HelioVector(Body.Mercury, new Date('2027-01-02T00:00:
 assert([selectedEpochProbe.x, selectedEpochProbe.y, selectedEpochProbe.z].every(Number.isFinite), 'Selected-epoch ephemeris probe is not finite.');
 assert(JSON.stringify(solarVector(selectedEpochProbe)) !== JSON.stringify(solar.bodies[0].eqjAu), 'Selected-epoch probe did not change Mercury geometry.');
 
+const issText = await read('data/raw/iss-omm.json');
+const issRaw = JSON.parse(issText);
+const iss = await json('src/data/iss-expedition.json');
+assert(Array.isArray(issRaw) && issRaw.length === 1 && JSON.stringify(iss.elements) === JSON.stringify(issRaw[0]), 'ISS manifest does not exactly retain its single raw OMM record.');
+assert(iss.object.noradCatalogueId === '25544' && iss.object.internationalDesignator === '1998-067A', 'ISS identity changed.');
+assert(iss.source.rawSha256 === sha256(issText) && iss.source.sourceEpoch === `${issRaw[0].EPOCH}Z`, 'ISS raw hash or exact source epoch changed.');
+assert(iss.source.referenceFrame === 'TEME' && iss.source.timeSystem === 'UTC' && iss.source.meanElementTheory === 'SGP4', 'ISS source semantics changed.');
+assert(iss.position.units === 'km' && iss.position.frame === 'TEME' && iss.position.lightTimeCorrection === false && iss.position.uncertainty === null, 'ISS output contract changed.');
+assert(iss.snapshotStatus === 'HISTORICAL' && iss.staleness.historical === true && iss.staleness.liveRefresh === false, 'ISS staleness/live-refresh contract changed.');
+assert(iss.propagator.version === '7.2.0', 'ISS propagator version changed.');
+const issSourceMs = Date.parse(iss.source.sourceEpoch);
+const issWindowMs = 12 * 60 * 60 * 1000;
+assert(iss.selection.defaultEpoch === new Date(issSourceMs).toISOString(), 'ISS default is not the millisecond-quantized source epoch.');
+assert(iss.selection.minEpoch === new Date(issSourceMs - issWindowMs).toISOString() && iss.selection.maxEpoch === new Date(issSourceMs + issWindowMs).toISOString(), 'ISS selection bounds changed.');
+const issSatrec = json2satrec(iss.elements);
+const issReference = propagate(issSatrec, new Date(iss.selection.defaultEpoch));
+assert(issReference && [issReference.position.x, issReference.position.y, issReference.position.z].every(Number.isFinite), 'ISS reference propagation failed.');
+const issReferenceVector = solarVector(issReference.position);
+assert(JSON.stringify(iss.referencePropagation.temeKm) === JSON.stringify(issReferenceVector), 'ISS reference TEME vector mismatch.');
+assert(iss.referencePropagation.geocentricDistanceKm === Number(Math.hypot(...issReferenceVector).toFixed(12)), 'ISS reference geocentric distance mismatch.');
+const issSelectedProbeEpoch = new Date(issSourceMs + 10 * 60 * 1000).toISOString();
+const issSelectedProbe = propagate(issSatrec, new Date(issSelectedProbeEpoch));
+assert(issSelectedProbe && [issSelectedProbe.position.x, issSelectedProbe.position.y, issSelectedProbe.position.z].every(Number.isFinite), 'ISS selected-time probe failed.');
+assert(JSON.stringify(solarVector(issSelectedProbe.position)) !== JSON.stringify(issReferenceVector), 'ISS selected-time probe did not change TEME geometry.');
+
 assert(sha256(baseText) === '6bcd8b57617226da328e85bee5c2955755ee054ed4d775dd43f03855cb2cb362', 'The preserved base snapshot hash changed.');
 assert(base.length === 6473 && base.length === baseProvenance.rowCount, 'Base row count does not match the verified snapshot.');
 assert(new Set(base.map((row) => row.pl_name)).size === base.length, 'Base planet identifiers are not unique.');
@@ -101,6 +127,24 @@ const report = {
     selectedEpochProbe: '2027-01-02T00:00:00.000Z',
     lightTimeCorrection: false,
     aberrationCorrection: false,
+  },
+  iss: {
+    object: 'ISS (ZARYA)',
+    noradCatalogueId: '25544',
+    rawSha256: iss.source.rawSha256,
+    sourceEpoch: iss.source.sourceEpoch,
+    retrievedAt: iss.source.retrievedAt,
+    selectedEpochWindowUtc: [iss.selection.minEpoch, iss.selection.maxEpoch],
+    propagator: `satellite.js ${iss.propagator.version}`,
+    units: iss.position.units,
+    frame: iss.position.frame,
+    exactRawOmmMatch: true,
+    exactReferenceMatch: true,
+    selectedEpochProbe: issSelectedProbeEpoch,
+    historical: true,
+    liveRefresh: false,
+    lightTimeCorrection: false,
+    uncertainty: null,
   },
   gaia: {
     rows: gaia.rowCount,

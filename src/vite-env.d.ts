@@ -11,6 +11,7 @@ interface Window {
     systems: number;
     planets: number;
     solarEpoch: string;
+    issEpoch: string | null;
     camera: { x: number; y: number; z: number; targetX: number; targetY: number; targetZ: number };
     transitioning: boolean;
   };

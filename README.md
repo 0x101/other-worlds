@@ -1,8 +1,8 @@
 # Other Worlds
 
-A locally runnable, continuous cosmic journey built with React, TypeScript, Vite, and Three.js. It opens at **Earth**, travels through a selected-epoch **Solar System** and a quality-filtered **Gaia DR3 neighbourhood** with real exoplanet-host lights, arrives at **TRAPPIST-1 e**, and looks back toward home. The complete exoplanet atlas remains available as **Explore**, using the same renderer and URL state.
+A locally runnable, continuous cosmic journey built with React, TypeScript, Vite, and Three.js. It opens at **Earth**, offers a bounded archived **ISS expedition**, travels through a selected-epoch **Solar System** and a quality-filtered **Gaia DR3 neighbourhood** with real exoplanet-host lights, arrives at **TRAPPIST-1 e**, and looks back toward home. The complete exoplanet atlas remains available as **Explore**, using the same renderer and URL state.
 
-The included NASA Exoplanet Archive snapshot contains **6,473 unique planets in 4,865 systems**. It is preserved data, not a live or complete current census. A separate Gaia snapshot contains **384 unique nearby sources** with published geometric-distance intervals.
+The included NASA Exoplanet Archive snapshot contains **6,473 unique planets in 4,865 systems**. It is preserved data, not a live or complete current census. A separate Gaia snapshot contains **384 unique nearby sources** with published geometric-distance intervals. The optional Earth expedition preserves one CelesTrak ISS orbital-element response and derives historical positions locally; it never presents a live tracker.
 
 ## Run
 
@@ -20,7 +20,7 @@ Open `http://localhost:7100/`. The Vite `dev` script forwards host and port argu
 ```bash
 npm test
 npm run build
-npm run data:validate                    # NASA + Gaia raw/runtime integrity audit
+npm run data:validate                    # NASA + Gaia + ISS raw/runtime integrity audit
 npm run validate:browser                 # development server, then stops it
 node scripts/validate-browser.mjs --preview  # production dist, then stops it
 ```
@@ -40,6 +40,7 @@ Earth → Solar System → Gaia neighbourhood + nearby hosts → TRAPPIST-1 syst
 ```
 
 - Earth uses a locally bundled, Three.js-packaged NASA Blue Marble composite, explicitly not a live cloud view.
+- The optional **Meet the ISS** expedition preserves one CelesTrak OMM response for NORAD `25544`, with exact source epoch `2026-11-27T09:29:25.185696Z`, raw hash, local preservation time, and historical source age. Satellite.js 7.2.0 derives Earth-centred TEME positions locally inside a ±12 h interaction window. Manual 10-minute steps and a 47-point trace use no playback or runtime source request; the marker's direction is retained while radial separation is exaggerated and disclosed.
 - `src/data/solar-system.json` preserves eight Astronomy Engine 2.1.19 heliocentric positions for reference epoch `2026-11-26T00:00:00.000Z`, with source EQJ/J2000 and display ECL/J2000 vectors in au. The same pinned runtime computes selected epochs in the declared 2000–2100 UTC window. `npm run data:solar` deliberately regenerates only the reference snapshot. Distances and body sizes are visually compressed and disclosed; no live, light-time-corrected, or aberration-corrected claim is made.
 - `src/data/gaia-neighbourhood.json` holds 384 quality-filtered Gaia DR3 sources at J2016.0 / TCB, retrieved through the ARI Gaia Archive partner on `2026-11-27T00:33:19.000Z`. Exact string source IDs, parallax/error, proper motions, photometry, quality fields, and Bailer–Jones geometric posterior distances with 16th–84th-percentile intervals are retained. The raw CSV, SHA-256, exact ADQL, endpoint, units, and display transformations are preserved; distances are not `1000 / parallax`.
 - The neighbourhood overlays the 96 nearest NASA exoplanet-host systems with complete positive archive distances and directions as larger selectable lights. This independent overlay is not a Gaia crossmatch, and neither layer is a complete stellar census. Missing geometry is excluded, not invented.
@@ -59,8 +60,11 @@ A NASA refresh replaces the snapshot with a new full real response and refuses s
 
 To intentionally refresh the bounded Gaia slice, run `npm run data:gaia`. It makes one 120-second-bounded ARI TAP request and validates the complete response before replacing the raw CSV, runtime manifest, and `gaia-dr3-neighbourhood-query.sql`. To rebuild deterministically from the preserved raw response instead, use `npm run data:gaia -- --input data/raw/gaia-dr3-neighbourhood.csv --retrieved-at 2026-11-27T00:33:19.000Z`. Review and commit all three outputs together.
 
+`npm run data:iss` is an **offline rebuild**, not a refresh: it validates `data/raw/iss-omm.json` and regenerates only `src/data/iss-expedition.json` from that preserved response. It never contacts CelesTrak.
+
 ## Controls and sharing
 
+- On Earth, Meet the ISS opens the archived source epoch; step backward/forward by 10 minutes, reset to the source epoch, inspect orbit/staleness/scale, or close the expedition. Its exact selected instant is shareable with `?iss=…` only on Earth, and leaving Earth clears it.
 - Leave Earth, enter the Solar System, travel to nearby suns, plot the TRAPPIST-1 course, approach the world, then look back, resume the portrait, or return home.
 - In the Solar System, choose a UTC date, step one day, or play/pause model time at one day per nominal second. The epoch is exact-link shareable; epoch changes preserve the existing canvas and camera. Reduced motion removes playback and keeps explicit stepping.
 - In the neighbourhood, select a Gaia point or choose its exact source ID from the method panel to inspect its published distance interval and astrometry. NASA host lights retain planet-system picking priority.
@@ -68,11 +72,11 @@ To intentionally refresh the bounded Gaia slice, run `npm run data:gaia`. It mak
 - Search by planet or host; filter by derived rocky/giant class, archive equilibrium-temperature band, transit flag, or distance. Select a result or 3D target, choose a sibling world, then approach the planet.
 - Wonder gives concise, evidence-bound explanations; three curated journeys resolve only real catalogue entries.
 - Observatory separates **MEASURED** archive-reported fields, **DERIVED** app calculations, and **IMAGINED** reconstruction, with source uncertainties, publications, raw exports, and dialog focus management.
-- URLs preserve the current view, selected Solar System epoch, planet, journey origin, interpretation mode, search/filter, evidence state, camera angles, and selected Share template. Legacy standalone Studio links migrate to Portrait Share without restoring designer controls.
+- URLs preserve the current view, selected ISS and Solar System epochs, planet, journey origin, interpretation mode, search/filter, evidence state, camera angles, and selected Share template. Legacy standalone Studio links migrate to Portrait Share without restoring designer controls.
 - Share opens a context-preserving dialog with three finished templates: **Portrait**, **Field Note**, and **Orbital Study**. Each has a live preview, exact-link copy with manual fallback, a real high-resolution PNG download, and a QR reopen link.
 - Portrait and Field Note use deterministic static artwork; Orbital Study uses real host/sibling data and the deterministic orbital fingerprint. Missing values are omitted, and visual compression/derivation rules are disclosed.
 - Raw JSON/CSV exports remain in Observatory; direct camera manipulation remains on the world canvas. Share has no sliders or template customization.
-- Reduced-motion, low-power rendering, static no-WebGL journey views/reconstructions/export, loading, empty, clipboard fallback, PNG retry, and retryable data-error states are included.
+- Reduced-motion, low-power rendering, static no-WebGL journey views/reconstructions/export, loading, empty, clipboard fallback, PNG retry, and retryable data-error states are included. The ISS instrument retains manual stepping and an equivalent still SVG marker/trace in reduced-motion and no-WebGL modes.
 
 ## Documentation
 

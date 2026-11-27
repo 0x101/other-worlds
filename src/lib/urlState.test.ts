@@ -84,4 +84,14 @@ import { DEFAULT_JOURNEY, journeySearch, parseJourney } from './urlState';
     expect(parseJourney('?view=solar&epoch=invalid').solarEpoch).toBe(DEFAULT_JOURNEY.solarEpoch);
     expect(journeySearch({ ...selected, view: 'earth' })).toBe('');
   });
+
+  it('round-trips an open ISS expedition only on Earth and fails invalid time closed to its source epoch', () => {
+    const selected = { ...DEFAULT_JOURNEY, issEpoch: '2026-11-27T09:39:25.185Z' };
+    expect(journeySearch(selected)).toBe('?iss=2026-11-27T09%3A39%3A25.185Z');
+    expect(parseJourney(journeySearch(selected))).toEqual(selected);
+    expect(parseJourney('?iss=invalid')).toEqual({ ...DEFAULT_JOURNEY, issEpoch: '2026-11-27T09:29:25.185Z' });
+    expect(parseJourney('?iss=2026-11-28T09%3A39%3A25.185Z').issEpoch).toBe('2026-11-27T09:29:25.185Z');
+    expect(parseJourney('?view=solar&iss=2026-11-27T09%3A39%3A25.185Z').issEpoch).toBeNull();
+    expect(journeySearch({ ...selected, view: 'solar' })).toBe('?view=solar');
+  });
 });

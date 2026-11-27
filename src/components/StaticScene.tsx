@@ -4,26 +4,41 @@ import { hashString, skyPosition } from '../lib/catalogue';
 import { hostColor, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
 import { GAIA_NEIGHBOURHOOD, gaiaDisplayColour, gaiaDisplayPosition, type GaiaStar } from '../lib/gaia';
 import { formatSolarEpoch } from '../lib/solarTime';
+import { formatIssEpoch, issStateAt, issTraceAt } from '../lib/iss';
 
 interface StaticSceneProps {
   catalogue: Catalogue;
   view: ViewName;
   planet: PlanetRow | null;
   solarEpoch: string;
+  issEpoch: string | null;
   onSelect: (planet: PlanetRow) => void;
   onGaiaSelect: (star: GaiaStar) => void;
 }
 
-export default function StaticScene({ catalogue, view, planet, solarEpoch, onSelect, onGaiaSelect }: StaticSceneProps) {
+export default function StaticScene({ catalogue, view, planet, solarEpoch, issEpoch, onSelect, onGaiaSelect }: StaticSceneProps) {
+  const iss = view === 'earth' && issEpoch ? { state: issStateAt(issEpoch), trace: issTraceAt(issEpoch) } : null;
   if (view === 'earth') {
     return (
       <div className="static-scene static-earth-scene" data-testid="static-scene">
-        <div
-          className="static-earth"
-          style={{ backgroundImage: `url(${import.meta.env.BASE_URL}textures/earth-blue-marble.jpg)` }}
-          role="img"
-          aria-label="Still NASA Blue Marble composite of Earth; not a live cloud view"
-        />
+        <div className="static-earth-orbit">
+          <div
+            className="static-earth"
+            style={{ backgroundImage: `url(${import.meta.env.BASE_URL}textures/earth-blue-marble.jpg)` }}
+            role="img"
+            aria-label="Still NASA Blue Marble composite of Earth; not a live cloud view"
+          />
+          {iss && (
+            <svg className="static-iss" viewBox="-3.3 -3.3 6.6 6.6" role="img" aria-label={`Still SGP4-derived ISS position at ${formatIssEpoch(issEpoch!)}; TEME direction with radial separation exaggerated`} data-testid="static-iss">
+              <polyline points={iss.trace.map((point) => `${point.x},${-point.y}`).join(' ')} fill="none" stroke="#c3b18e" strokeOpacity="0.4" strokeWidth="0.025" />
+              <g data-iss-marker data-teme-km={iss.state.temeKm.join(',')}>
+                <circle cx={iss.state.displayPosition.x} cy={-iss.state.displayPosition.y} r="0.13" fill="#f4d7a1" />
+                <circle cx={iss.state.displayPosition.x} cy={-iss.state.displayPosition.y} r="0.24" fill="none" stroke="#dac39e" strokeWidth="0.025" />
+                <title>ISS (ZARYA): derived TEME position, not live telemetry</title>
+              </g>
+            </svg>
+          )}
+        </div>
       </div>
     );
   }
