@@ -1,9 +1,11 @@
+import { Body, HelioVector, Rotation_EQJ_ECL, RotateVector } from 'astronomy-engine';
 import type { Catalogue, PlanetRow, ViewName } from '../types';
 import snapshot from '../data/solar-system.json';
 import { generateWorld } from './world';
+import { DEFAULT_SOLAR_EPOCH, solarEpochMs } from './solarTime';
 
 export const GOLDEN_PLANET = 'TRAPPIST-1 e';
-export const GOLDEN_EPOCH = '2026-11-26T00:00:00.000Z';
+export const GOLDEN_EPOCH = DEFAULT_SOLAR_EPOCH;
 
 export interface SolarBody {
   name: string;
@@ -29,7 +31,7 @@ export const SOLAR_SNAPSHOT = snapshot as SolarSnapshot;
 
 export const VIEW_CONTEXT: Record<ViewName, { position: string; scale: string; frame: string }> = {
   earth: { position: 'Earth / you are here', scale: 'Local portrait · body size enlarged', frame: 'Composite surface · not live' },
-  solar: { position: 'Sun / Solar System', scale: 'Logarithmic distance · enlarged bodies', frame: 'ECL J2000 display · fixed UTC epoch' },
+  solar: { position: 'Sun / Solar System', scale: 'Logarithmic distance · enlarged bodies', frame: 'ECL J2000 display · selected UTC epoch' },
   neighbourhood: { position: 'Sun / Gaia DR3 neighbourhood', scale: 'Logarithmic parsecs · distance intervals retained', frame: 'ICRS-aligned · J2016.0 · TCB' },
   atlas: { position: 'Sun / observed exoplanet sky', scale: 'Logarithmic parsecs', frame: 'NASA archive RA/Dec · snapshot' },
   system: { position: 'Selected exoplanet host', scale: 'Compressed orbital radii', frame: 'Archive orbit fields · phases illustrative' },
@@ -48,13 +50,38 @@ const BODY_STYLE: Record<string, { color: string; radius: number }> = {
   Neptune: { color: '#668da9', radius: 0.55 },
 };
 
+const SOLAR_BODY_NAMES: readonly (readonly [Body, string])[] = [
+  [Body.Mercury, 'Mercury'], [Body.Venus, 'Venus'], [Body.Earth, 'Earth'], [Body.Mars, 'Mars'],
+  [Body.Jupiter, 'Jupiter'], [Body.Saturn, 'Saturn'], [Body.Uranus, 'Uranus'], [Body.Neptune, 'Neptune'],
+];
+
+function sourceVector(value: { x: number; y: number; z: number }): [number, number, number] {
+  return [value.x, value.y, value.z].map((component) => Number(component.toFixed(12))) as [number, number, number];
+}
+
+/** Geometric heliocentric EQJ/J2000 au at the selected instant, with a separate ECL/J2000 display vector. */
+export function solarBodiesAt(epoch = GOLDEN_EPOCH): SolarBody[] {
+  if (epoch === SOLAR_SNAPSHOT.epoch) return SOLAR_SNAPSHOT.bodies;
+  const date = new Date(solarEpochMs(epoch));
+  const rotation = Rotation_EQJ_ECL();
+  return SOLAR_BODY_NAMES.map(([body, name]) => {
+    const eqj = HelioVector(body, date);
+    return {
+      name,
+      heliocentricAu: Number(eqj.Length().toFixed(12)),
+      eqjAu: sourceVector(eqj),
+      eclipticAu: sourceVector(RotateVector(rotation, eqj)),
+    };
+  });
+}
+
 export function solarDisplayRadius(au: number): number {
   if (!Number.isFinite(au) || au <= 0) throw new Error('Heliocentric distance must be positive.');
   return 3.8 + Math.log1p(au) * 6.2;
 }
 
-export function solarDisplayBodies() {
-  return SOLAR_SNAPSHOT.bodies.map((body) => {
+export function solarDisplayBodies(epoch = GOLDEN_EPOCH) {
+  return solarBodiesAt(epoch).map((body) => {
     const length = Math.hypot(...body.eclipticAu);
     const scale = solarDisplayRadius(body.heliocentricAu) / length;
     return {

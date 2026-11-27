@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-27T02:58:02.808Z",
+  "validatedAt": "2026-11-27T16:03:36.291Z",
   "passed": true,
   "base": {
     "rows": 6473,
@@ -16,6 +16,22 @@
     "normalizedSha256": "7fc79edab2eb43dd2d8fe040f7c898377ebc9ed036b9b0495917a3455167efb1",
     "comparedValues": 84149,
     "comparedNormalizedCells": 440164
+  },
+  "solar": {
+    "referenceEpoch": "2026-11-26T00:00:00.000Z",
+    "selectedEpochWindowUtc": [
+      "2000-01-01T00:00:00.000Z",
+      "2100-01-01T00:00:00.000Z"
+    ],
+    "bodies": 8,
+    "generator": "Astronomy Engine 2.1.19",
+    "units": "au",
+    "sourceFrame": "EQJ/J2000",
+    "displayFrame": "ECL/J2000",
+    "exactGeneratorMatch": true,
+    "selectedEpochProbe": "2027-01-02T00:00:00.000Z",
+    "lightTimeCorrection": false,
+    "aberrationCorrection": false
   },
   "gaia": {
     "rows": 384,

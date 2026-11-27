@@ -501,3 +501,43 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .gaia-inspector > strong { margin-top: 12px; margin-bottom: 14px; font-size: 23px; }
   .gaia-inspector dl > div { padding: 6px 0; }
 }
+
+/* Selected Solar System epoch: one instrument, no renderer reset. */
+.solar-time { position: absolute; z-index: 14; right: 3.1vw; bottom: calc(96px + env(safe-area-inset-bottom)); width: min(360px, 34vw); padding: 16px; border: 1px solid var(--p-line); background: oklch(0.145 0.014 175 / .82); backdrop-filter: blur(18px); }
+.solar-time-readout { display: grid; gap: 5px; }
+.solar-time-readout > span { color: var(--p-faint); font-size: 8px; letter-spacing: .16em; text-transform: uppercase; }
+.solar-time-readout > time { color: var(--text); font-size: 12px; font-variant-numeric: tabular-nums; letter-spacing: .08em; }
+.solar-time-actions { display: flex; gap: 6px; margin-top: 12px; }
+.solar-time-actions .icon-button { width: 44px; height: 44px; }
+.solar-play { display: flex; flex: 1; align-items: center; justify-content: center; gap: 7px; min-width: 0; min-height: 44px; padding: 0 10px; border: 1px solid var(--line); color: var(--text); font-size: 11px; transition: background 160ms ease-out, border-color 160ms ease-out; }
+.solar-play:hover { background: oklch(0.3 0.02 160 / .55); border-color: var(--p-muted); }
+.solar-play[aria-pressed="true"] { border-color: var(--p-accent); color: var(--accent); }
+.solar-play small { margin-left: auto; color: var(--p-faint); font-size: 8px; white-space: nowrap; }
+.solar-date { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 10px; color: var(--text-muted); font-size: 9px; }
+.solar-date input { width: 100%; min-width: 0; min-height: 40px; padding: 0 9px; border: 1px solid var(--p-line); border-radius: 0; background: var(--p-ink); color: var(--text); font-size: 11px; font-variant-numeric: tabular-nums; }
+.solar-time-status { margin: 8px 0 0; color: var(--p-faint); font-size: 8px; line-height: 1.5; }
+.view-solar .solar-worlds { left: 3.2vw; max-width: calc(100vw - 500px); overflow-x: auto; transform: none; scrollbar-width: none; }
+
+@media (max-width: 900px) {
+  .solar-time { width: min(320px, 38vw); padding: 12px; }
+  .solar-play { padding: 0 7px; }
+  .solar-play small { display: none; }
+  .view-solar .solar-worlds { max-width: calc(100vw - 390px); }
+}
+
+@media (max-width: 640px) {
+  .view-solar .expedition-copy { top: 11%; }
+  .view-solar .expedition-copy .back-button { margin-bottom: 8px; }
+  .view-solar .expedition-copy h1 { margin: 10px 0 12px; font-size: 50px; }
+  .view-solar .expedition-copy > p { font-size: 12px; }
+  .view-solar .expedition-actions { margin-top: 12px; }
+  .solar-time { left: 16px; right: 16px; bottom: calc(164px + env(safe-area-inset-bottom)); width: auto; padding: 10px 12px; }
+  .solar-time-readout { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .solar-time-readout > span { font-size: 7px; }
+  .solar-time-readout > time { font-size: 10px; text-align: right; }
+  .solar-time-actions { margin-top: 8px; }
+  .solar-date { margin-top: 7px; font-size: 8px; }
+  .solar-date input { min-height: 40px; }
+  .solar-time-status { margin-top: 5px; font-size: 7px; }
+  .view-solar .solar-worlds { left: 16px; right: 16px; max-width: none; }
+}

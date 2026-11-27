@@ -1,21 +1,36 @@
 import { describe, expect, it } from 'vitest';
-import { GOLDEN_EPOCH, SOLAR_SNAPSHOT, VIEW_CONTEXT, lookBackGeometry, nearbyHosts, solarDisplayBodies, solarDisplayRadius } from './goldenPath';
+import { GOLDEN_EPOCH, SOLAR_SNAPSHOT, VIEW_CONTEXT, lookBackGeometry, nearbyHosts, solarBodiesAt, solarDisplayBodies, solarDisplayRadius } from './goldenPath';
 import { parseCatalogue } from './catalogue';
 import { makePlanet } from '../test/fixtures';
 
 describe('golden-path scientific contracts', () => {
-  it('retains a fixed epoch, units, source frame, and eight finite heliocentric positions', () => {
+  it('retains a reference epoch, units, source frame, and eight finite heliocentric positions', () => {
     expect(SOLAR_SNAPSHOT.epoch).toBe(GOLDEN_EPOCH);
     expect(SOLAR_SNAPSHOT.units).toBe('au');
     expect(SOLAR_SNAPSHOT.frame).toContain('EQJ');
     expect(SOLAR_SNAPSHOT.transformation).toContain('Rotation_EQJ_ECL');
     expect(VIEW_CONTEXT.solar.frame).toContain('ECL J2000 display');
+    expect(VIEW_CONTEXT.solar.frame).toContain('selected UTC epoch');
     expect(SOLAR_SNAPSHOT.bodies.map((body) => body.name)).toEqual(['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune']);
     for (const body of SOLAR_SNAPSHOT.bodies) {
       expect(body.heliocentricAu).toBeGreaterThan(0);
       expect(Math.hypot(...body.eqjAu)).toBeCloseTo(body.heliocentricAu, 8);
       expect(body.eclipticAu.every(Number.isFinite)).toBe(true);
     }
+  });
+
+  it('derives deterministic selected-epoch EQJ and ECL vectors without using the visitor clock', () => {
+    const selectedEpoch = '2026-11-27T00:00:00.000Z';
+    const selected = solarBodiesAt(selectedEpoch);
+    expect(selected).toEqual(solarBodiesAt(selectedEpoch));
+    expect(selected).not.toEqual(SOLAR_SNAPSHOT.bodies);
+    expect(selected.map((body) => body.name)).toEqual(SOLAR_SNAPSHOT.bodies.map((body) => body.name));
+    for (const body of selected) {
+      expect(Math.hypot(...body.eqjAu)).toBeCloseTo(body.heliocentricAu, 8);
+      expect(Math.hypot(...body.eclipticAu)).toBeCloseTo(body.heliocentricAu, 8);
+    }
+    expect(solarDisplayBodies(selectedEpoch)[0].position).not.toEqual(solarDisplayBodies(GOLDEN_EPOCH)[0].position);
+    expect(() => solarBodiesAt('not-an-epoch')).toThrow(/ISO UTC/);
   });
 
   it('uses monotonic logarithmic Solar System display radii without copying physical distances', () => {

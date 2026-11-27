@@ -106,6 +106,7 @@ export type JourneyOrigin = 'atlas' | 'neighbourhood';
 
 export interface JourneyState {
   view: ViewName;
+  solarEpoch: string;
   planetName: string | null;
   origin: JourneyOrigin;
   filter: FilterName;

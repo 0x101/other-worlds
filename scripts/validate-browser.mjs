@@ -116,9 +116,57 @@ try {
 
   await page.getByRole('button', { name: 'Leave Earth' }).click();
   await ready(page, 'solar');
-  check('Solar System uses eight modelled planets at a fixed explicit epoch', await page.locator('.solar-worlds li').count() === 8 && await page.locator('.solar-copy time').getAttribute('datetime') === '2026-11-26T00:00:00.000Z');
+  check('Solar System opens eight modelled planets at the preserved explicit epoch', await page.locator('.solar-worlds li').count() === 8 && await page.locator('.solar-time time').getAttribute('datetime') === '2026-11-26T00:00:00.000Z');
+  check('Solar System credits the pinned ephemeris rather than the exoplanet snapshot', await page.getByRole('link', { name: 'AE / 2.1.19' }).getAttribute('href') === 'https://github.com/cosinekitty/astronomy/tree/master/source/js');
   await noOverflow(page, 'desktop Solar System');
   await shot(page, 'desktop-solar');
+
+  await page.evaluate(() => { window.__solarValidationCanvas = document.querySelector('.scene-canvas canvas'); });
+  const cameraBeforeEpoch = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__.camera }));
+  await page.getByRole('button', { name: 'Next day', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.solarEpoch === '2026-11-27T00:00:00.000Z');
+  await ready(page, 'solar');
+  check('next-day derivation updates the existing scene and shareable URL without moving the camera', page.url().includes('epoch=2026-11-27T00%3A00%3A00.000Z') && await page.evaluate((before) => {
+    const current = window.__OTHER_WORLDS__;
+    return window.__solarValidationCanvas === document.querySelector('.scene-canvas canvas') && Object.keys(before).every((key) => Math.abs(current.camera[key] - before[key]) < 0.000001);
+  }, cameraBeforeEpoch));
+
+  const beforePlayback = await page.locator('.solar-time time').getAttribute('datetime');
+  await page.getByRole('button', { name: 'Play model time' }).click();
+  await page.waitForFunction((start) => Date.parse(document.querySelector('.solar-time time').dateTime) >= Date.parse(start) + 43_200_000, beforePlayback, { timeout: 8000 });
+  check('playback advances explicit model time at the declared rate', await page.getByRole('button', { name: 'Pause model time' }).getAttribute('aria-pressed') === 'true' && await page.getByText('Model time playing · not a live clock.', { exact: true }).isVisible());
+  await shot(page, 'desktop-solar-time');
+  await page.getByRole('button', { name: 'Pause model time' }).click();
+  const pausedEpoch = await page.locator('.solar-time time').getAttribute('datetime');
+  await page.waitForTimeout(650);
+  check('pause holds the selected epoch', await page.locator('.solar-time time').getAttribute('datetime') === pausedEpoch && await page.getByText('Paused · date choices select 00:00 UTC.', { exact: true }).isVisible());
+
+  await page.getByLabel('Choose UTC date').fill('2027-01-02');
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.solarEpoch === '2027-01-02T00:00:00.000Z');
+  const selectedSolarUrl = page.url();
+  await page.reload({ waitUntil: 'networkidle' });
+  await ready(page, 'solar');
+  check('selected Solar System epoch survives an exact-link reload at 00:00 UTC', page.url() === selectedSolarUrl && await page.locator('.solar-time time').getAttribute('datetime') === '2027-01-02T00:00:00.000Z' && await page.locator('.solar-time time').getByText('02 JAN 2027 · 00:00 UTC', { exact: true }).isVisible());
+
+  await page.mouse.move(1040, 420);
+  await page.mouse.down();
+  await page.mouse.move(1110, 455, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(2300);
+  await ready(page, 'solar');
+  const draggedSolarCamera = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__.camera }));
+  await page.getByRole('button', { name: 'Next day', exact: true }).click();
+  await ready(page, 'solar');
+  const cameraAfterEpoch = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__.camera }));
+  check('camera orbit remains coherent across later epoch changes', Object.keys(draggedSolarCamera).every((key) => Math.abs(cameraAfterEpoch[key] - draggedSolarCamera[key]) < 0.01), { before: draggedSolarCamera, after: cameraAfterEpoch });
+  await shot(page, 'desktop-solar-selected');
+  await page.getByRole('button', { name: 'Reset to reference epoch' }).click();
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.solarEpoch === '2026-11-26T00:00:00.000Z');
+  check('reset restores the preserved epoch and removes redundant URL time state', !page.url().includes('epoch=') && await page.getByRole('button', { name: 'Reset to reference epoch' }).isDisabled());
+  await page.getByLabel('Choose UTC date').fill('1999-12-31');
+  check('out-of-window date input preserves the selected epoch and visible draft without a page error', await page.getByText('Use 2000-01-01 through 2100-01-01 UTC · epoch unchanged.', { exact: true }).isVisible() && await page.locator('.solar-time time').getAttribute('datetime') === '2026-11-26T00:00:00.000Z' && await page.getByLabel('Choose UTC date').getAttribute('aria-invalid') === 'true' && await page.getByLabel('Choose UTC date').inputValue() === '1999-12-31');
+  await page.getByLabel('Choose UTC date').fill('2026-11-26');
+  check('valid date recovery clears the input error even when the epoch was unchanged', await page.getByLabel('Choose UTC date').getAttribute('aria-invalid') === 'false' && await page.getByLabel('Choose UTC date').inputValue() === '2026-11-26' && await page.getByText('Paused · date choices select 00:00 UTC.', { exact: true }).isVisible());
   performance.solar = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__ }));
 
   await page.getByRole('button', { name: 'Travel to nearby suns' }).click();
@@ -318,6 +366,19 @@ try {
   await shot(phone, 'mobile-earth');
   await phone.getByRole('button', { name: 'Leave Earth' }).click();
   await ready(phone, 'solar');
+  await noOverflow(phone, 'mobile Solar System');
+  await phone.getByRole('button', { name: 'Next day', exact: true }).click();
+  await phone.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.solarEpoch === '2026-11-27T00:00:00.000Z');
+  const mobileSolarGeometry = await phone.evaluate(() => {
+    const box = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, height: rect.height };
+    };
+    return { panel: box('.solar-time'), course: box('.solar-copy .primary-button'), worlds: box('.solar-worlds'), next: box('.solar-time-actions button[aria-label="Next day"]'), viewportWidth: innerWidth, viewportHeight: innerHeight };
+  });
+  check('mobile Solar time controls stay viewport-bounded and clear the course and planet rail', mobileSolarGeometry.panel.top >= mobileSolarGeometry.course.bottom && mobileSolarGeometry.panel.bottom <= mobileSolarGeometry.worlds.top && mobileSolarGeometry.panel.left >= 0 && mobileSolarGeometry.panel.right <= mobileSolarGeometry.viewportWidth && mobileSolarGeometry.panel.bottom <= mobileSolarGeometry.viewportHeight, mobileSolarGeometry);
+  check('mobile epoch step preserves a 44px touch target and exact selected time', mobileSolarGeometry.next.height >= 44 && await phone.locator('.solar-time time').getAttribute('datetime') === '2026-11-27T00:00:00.000Z');
+  await shot(phone, 'mobile-solar');
   await phone.getByRole('button', { name: 'Travel to nearby suns' }).click();
   await ready(phone, 'neighbourhood');
   await noOverflow(phone, 'mobile Gaia neighbourhood');
@@ -408,6 +469,10 @@ try {
   await quiet.getByRole('button', { name: 'Leave Earth' }).click();
   await ready(quiet, 'solar');
   check('reduced-motion disables the journey transition', await quiet.locator('.journey-wipe').evaluate((element) => getComputedStyle(element).display === 'none'));
+  check('reduced-motion replaces automatic playback with an explicit explanation', await quiet.getByRole('button', { name: 'Play model time' }).count() === 0 && await quiet.getByText('Reduced motion · use explicit date steps.', { exact: true }).isVisible());
+  await quiet.getByRole('button', { name: 'Next day', exact: true }).click();
+  await quiet.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.solarEpoch === '2026-11-27T00:00:00.000Z');
+  check('reduced-motion retains deterministic manual epoch stepping', await quiet.locator('.solar-time time').getAttribute('datetime') === '2026-11-27T00:00:00.000Z' && await quiet.locator('.solar-time').evaluate((element) => getComputedStyle(element).animationName === 'none'));
   await shot(quiet, 'desktop-solar-reduced-motion');
   await quiet.getByRole('button', { name: 'Travel to nearby suns' }).click();
   await ready(quiet, 'neighbourhood');
@@ -446,7 +511,13 @@ try {
   await shot(fallbackPage, 'desktop-static-earth');
   await fallbackPage.getByRole('button', { name: 'Leave Earth' }).click();
   await fallbackPage.locator('.static-solar').waitFor();
-  check('no-WebGL journey reaches the Solar System', await fallbackPage.locator('.app').getAttribute('data-view') === 'solar' && await fallbackPage.locator('.static-solar').isVisible());
+  const staticSolarCopy = await fallbackPage.locator('.solar-copy p').textContent();
+  check('no-WebGL journey reaches an honest still Solar System', await fallbackPage.locator('.app').getAttribute('data-view') === 'solar' && await fallbackPage.locator('.static-solar').isVisible() && staticSolarCopy?.includes('Still view · choose an instant below.') && !staticSolarCopy.includes('Drag to change your viewpoint.'));
+  const staticMercuryBefore = await fallbackPage.locator('.static-solar [data-solar-body="Mercury"]').getAttribute('data-eqj-au');
+  await fallbackPage.getByRole('button', { name: 'Next day', exact: true }).click();
+  check('no-WebGL epoch stepping updates retained EQJ vectors and explicit still caption', await fallbackPage.locator('.static-solar [data-solar-body="Mercury"]').getAttribute('data-eqj-au') !== staticMercuryBefore && (await fallbackPage.locator('.static-solar svg').getAttribute('aria-label')).includes('27 NOV 2026 · 00:00 UTC') && await fallbackPage.locator('.static-solar [data-solar-body="Mercury"]').getAttribute('data-ecl-au') !== null);
+  await noOverflow(fallbackPage, 'no-WebGL Solar System');
+  await shot(fallbackPage, 'desktop-static-solar');
   await fallbackPage.getByRole('button', { name: 'Travel to nearby suns' }).click();
   await fallbackPage.locator('.static-neighbourhood').waitFor();
   check('no-WebGL Gaia fallback renders all 384 traceable sources', await fallbackPage.locator('.static-neighbourhood .gaia-star').count() === 384 && await fallbackPage.locator('.static-neighbourhood .gaia-star title').first().evaluate((element) => /^Gaia DR3 \d+:/.test(element.textContent ?? '')));

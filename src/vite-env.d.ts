@@ -10,5 +10,8 @@ interface Window {
     triangles: number;
     systems: number;
     planets: number;
+    solarEpoch: string;
+    camera: { x: number; y: number; z: number; targetX: number; targetY: number; targetZ: number };
+    transitioning: boolean;
   };
 }

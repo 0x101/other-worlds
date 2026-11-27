@@ -1,6 +1,6 @@
 # Other Worlds
 
-A locally runnable, continuous cosmic journey built with React, TypeScript, Vite, and Three.js. It opens at **Earth**, travels through a fixed-epoch **Solar System** and a quality-filtered **Gaia DR3 neighbourhood** with real exoplanet-host lights, arrives at **TRAPPIST-1 e**, and looks back toward home. The complete exoplanet atlas remains available as **Explore**, using the same renderer and URL state.
+A locally runnable, continuous cosmic journey built with React, TypeScript, Vite, and Three.js. It opens at **Earth**, travels through a selected-epoch **Solar System** and a quality-filtered **Gaia DR3 neighbourhood** with real exoplanet-host lights, arrives at **TRAPPIST-1 e**, and looks back toward home. The complete exoplanet atlas remains available as **Explore**, using the same renderer and URL state.
 
 The included NASA Exoplanet Archive snapshot contains **6,473 unique planets in 4,865 systems**. It is preserved data, not a live or complete current census. A separate Gaia snapshot contains **384 unique nearby sources** with published geometric-distance intervals.
 
@@ -40,7 +40,7 @@ Earth → Solar System → Gaia neighbourhood + nearby hosts → TRAPPIST-1 syst
 ```
 
 - Earth uses a locally bundled, Three.js-packaged NASA Blue Marble composite, explicitly not a live cloud view.
-- `src/data/solar-system.json` holds eight Astronomy Engine 2.1.19 heliocentric positions for `2026-11-26T00:00:00.000Z`, with source EQJ/J2000 and display ECL/J2000 vectors in au. `npm run data:solar` deliberately regenerates this fixed snapshot. Distances and body sizes are visually compressed and disclosed.
+- `src/data/solar-system.json` preserves eight Astronomy Engine 2.1.19 heliocentric positions for reference epoch `2026-11-26T00:00:00.000Z`, with source EQJ/J2000 and display ECL/J2000 vectors in au. The same pinned runtime computes selected epochs in the declared 2000–2100 UTC window. `npm run data:solar` deliberately regenerates only the reference snapshot. Distances and body sizes are visually compressed and disclosed; no live, light-time-corrected, or aberration-corrected claim is made.
 - `src/data/gaia-neighbourhood.json` holds 384 quality-filtered Gaia DR3 sources at J2016.0 / TCB, retrieved through the ARI Gaia Archive partner on `2026-11-27T00:33:19.000Z`. Exact string source IDs, parallax/error, proper motions, photometry, quality fields, and Bailer–Jones geometric posterior distances with 16th–84th-percentile intervals are retained. The raw CSV, SHA-256, exact ADQL, endpoint, units, and display transformations are preserved; distances are not `1000 / parallax`.
 - The neighbourhood overlays the 96 nearest NASA exoplanet-host systems with complete positive archive distances and directions as larger selectable lights. This independent overlay is not a Gaia crossmatch, and neither layer is a complete stellar census. Missing geometry is excluded, not invented.
 - Look-back uses the selected host's archive direction and distance to face the Sun and unresolved Earth. It is a schematic, not an observed view.
@@ -62,12 +62,13 @@ To intentionally refresh the bounded Gaia slice, run `npm run data:gaia`. It mak
 ## Controls and sharing
 
 - Leave Earth, enter the Solar System, travel to nearby suns, plot the TRAPPIST-1 course, approach the world, then look back, resume the portrait, or return home.
+- In the Solar System, choose a UTC date, step one day, or play/pause model time at one day per nominal second. The epoch is exact-link shareable; epoch changes preserve the existing canvas and camera. Reduced motion removes playback and keeps explicit stepping.
 - In the neighbourhood, select a Gaia point or choose its exact source ID from the method panel to inspect its published distance interval and astrometry. NASA host lights retain planet-system picking priority.
 - Explore opens the full atlas without abandoning the continuous application. Drag the atlas, Solar System, or planet to orbit; scroll/pinch to travel where enabled.
 - Search by planet or host; filter by derived rocky/giant class, archive equilibrium-temperature band, transit flag, or distance. Select a result or 3D target, choose a sibling world, then approach the planet.
 - Wonder gives concise, evidence-bound explanations; three curated journeys resolve only real catalogue entries.
 - Observatory separates **MEASURED** archive-reported fields, **DERIVED** app calculations, and **IMAGINED** reconstruction, with source uncertainties, publications, raw exports, and dialog focus management.
-- URLs preserve the current view, planet, journey origin, interpretation mode, search/filter, evidence state, camera angles, and selected Share template. Legacy standalone Studio links migrate to Portrait Share without restoring designer controls.
+- URLs preserve the current view, selected Solar System epoch, planet, journey origin, interpretation mode, search/filter, evidence state, camera angles, and selected Share template. Legacy standalone Studio links migrate to Portrait Share without restoring designer controls.
 - Share opens a context-preserving dialog with three finished templates: **Portrait**, **Field Note**, and **Orbital Study**. Each has a live preview, exact-link copy with manual fallback, a real high-resolution PNG download, and a QR reopen link.
 - Portrait and Field Note use deterministic static artwork; Orbital Study uses real host/sibling data and the deterministic orbital fingerprint. Missing values are omitted, and visual compression/derivation rules are disclosed.
 - Raw JSON/CSV exports remain in Observatory; direct camera manipulation remains on the world canvas. Share has no sliders or template customization.

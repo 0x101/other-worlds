@@ -75,4 +75,13 @@ import { DEFAULT_JOURNEY, journeySearch, parseJourney } from './urlState';
     expect(parseJourney(journeySearch(fromAtlas))).toEqual(fromAtlas);
     expect(journeySearch(fromAtlas)).toContain('from=atlas');
   });
+
+  it('round-trips only a valid explicit Solar System epoch', () => {
+    const selected = { ...DEFAULT_JOURNEY, view: 'solar' as const, solarEpoch: '2027-01-02T03:04:05.006Z' };
+    expect(journeySearch(selected)).toBe('?view=solar&epoch=2027-01-02T03%3A04%3A05.006Z');
+    expect(parseJourney(journeySearch(selected))).toEqual(selected);
+    expect(parseJourney('?view=solar&epoch=1999-01-01T00%3A00%3A00.000Z').solarEpoch).toBe(DEFAULT_JOURNEY.solarEpoch);
+    expect(parseJourney('?view=solar&epoch=invalid').solarEpoch).toBe(DEFAULT_JOURNEY.solarEpoch);
+    expect(journeySearch({ ...selected, view: 'earth' })).toBe('');
+  });
 });

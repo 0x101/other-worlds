@@ -1,16 +1,23 @@
 import { ArrowLeft, ArrowRight, ArrowUpRight, Home, X } from 'lucide-react';
 import type { Catalogue, PlanetRow, ViewName } from '../types';
-import { GOLDEN_PLANET, SOLAR_SNAPSHOT, VIEW_CONTEXT, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
+import { GOLDEN_PLANET, VIEW_CONTEXT, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
 import { GAIA_BY_ID, GAIA_NEIGHBOURHOOD, type GaiaStar } from '../lib/gaia';
+import SolarTimeControls from './SolarTimeControls';
 
 interface ExpeditionProps {
   catalogue: Catalogue;
   view: ViewName;
   planet: PlanetRow | null;
   gaiaStar: GaiaStar | null;
+  solarEpoch: string;
+  solarPlaying: boolean;
+  reducedMotion: boolean;
+  staticMode: boolean;
   onView: (view: ViewName) => void;
   onSelect: (planet: PlanetRow) => void;
   onGaiaSelect: (star: GaiaStar | null) => void;
+  onSolarEpoch: (epoch: string) => void;
+  onSolarPlayingChange: (playing: boolean) => void;
 }
 
 function Context({ view }: { view: ViewName }) {
@@ -22,7 +29,7 @@ function Context({ view }: { view: ViewName }) {
   );
 }
 
-export default function Expedition({ catalogue, view, planet, gaiaStar, onView, onSelect, onGaiaSelect }: ExpeditionProps) {
+export default function Expedition({ catalogue, view, planet, gaiaStar, solarEpoch, solarPlaying, reducedMotion, staticMode, onView, onSelect, onGaiaSelect, onSolarEpoch, onSolarPlayingChange }: ExpeditionProps) {
   if (view === 'earth') {
     return (
       <>
@@ -42,23 +49,23 @@ export default function Expedition({ catalogue, view, planet, gaiaStar, onView, 
   }
 
   if (view === 'solar') {
-    const bodies = solarDisplayBodies();
+    const bodies = solarDisplayBodies(solarEpoch);
     return (
       <>
         <section className="expedition-copy solar-copy">
           <button className="back-button" onClick={() => onView('earth')}><ArrowLeft size={16} />Back to Earth</button>
-          <span className="section-label">Our Solar System / fixed epoch</span>
+          <span className="section-label">Our Solar System / selected epoch</span>
           <h1>A family<br />of <em>worlds.</em></h1>
-          <p>Eight planets at one explicit instant.<br />Drag to change your viewpoint.</p>
-          <time dateTime={SOLAR_SNAPSHOT.epoch}>26 NOV 2026 · 00:00 UTC</time>
+          <p>Eight planets at your chosen instant.<br />{staticMode ? 'Still view · choose an instant below.' : 'Drag to change your viewpoint.'}</p>
           <div className="expedition-actions">
             <button className="primary-button" onClick={() => onView('neighbourhood')}>Travel to nearby suns <ArrowRight size={18} /></button>
           </div>
         </section>
-        <ol className="solar-worlds" aria-label="Planets in the fixed-epoch Solar System model">
+        <SolarTimeControls epoch={solarEpoch} playing={solarPlaying} reducedMotion={reducedMotion} onEpoch={onSolarEpoch} onPlayingChange={onSolarPlayingChange} />
+        <ol className="solar-worlds" aria-label="Planets in the selected-epoch Solar System model">
           {bodies.map((body) => <li key={body.name} className={body.name === 'Earth' ? 'is-earth' : ''}><i style={{ background: body.color }} />{body.name}{body.name === 'Earth' && <span>You are here</span>}</li>)}
         </ol>
-        <div className="expedition-disclosure">Derived heliocentric positions · distance rings are guides, not complete orbit paths</div>
+        <div className="expedition-disclosure">Derived geometric heliocentric EQJ/J2000 au → ECL/J2000 display · no light-time or aberration correction · rings are guides</div>
         <Context view={view} />
       </>
     );

@@ -1,4 +1,5 @@
 import type { ExperienceName, FilterName, JourneyState, ShareTemplate, ViewName } from '../types';
+import { DEFAULT_SOLAR_EPOCH, normalizeSolarEpoch } from './solarTime';
 
 const VIEWS: ViewName[] = ['earth', 'solar', 'neighbourhood', 'atlas', 'system', 'planet', 'lookback'];
 const FILTERS: FilterName[] = ['all', 'rocky', 'giants', 'temperate', 'transiting', 'nearby'];
@@ -7,6 +8,7 @@ const SHARE_TEMPLATES: ShareTemplate[] = ['portrait', 'field-note', 'orbital-stu
 
 export const DEFAULT_JOURNEY: JourneyState = {
   view: 'earth',
+  solarEpoch: DEFAULT_SOLAR_EPOCH,
   planetName: null,
   origin: 'neighbourhood',
   filter: 'all',
@@ -42,6 +44,7 @@ export function parseJourney(search: string): JourneyState {
   const shareTemplate = planetName && (view === 'planet' || view === 'system') ? requestedShare : null;
   return {
     view,
+    solarEpoch: view === 'solar' ? normalizeSolarEpoch(params.get('epoch')) : DEFAULT_SOLAR_EPOCH,
     planetName: planetName && (view === 'system' || view === 'planet' || view === 'lookback') ? planetName : null,
     origin: params.get('from') === 'atlas' ? 'atlas' : 'neighbourhood',
     filter: filterParam && FILTERS.includes(filterParam) ? filterParam : 'all',
@@ -60,6 +63,7 @@ export function journeySearch(state: JourneyState): string {
   const params = new URLSearchParams();
   if (state.planetName) params.set('planet', state.planetName);
   if (state.view !== 'earth') params.set('view', state.view);
+  if (state.view === 'solar' && state.solarEpoch !== DEFAULT_SOLAR_EPOCH) params.set('epoch', normalizeSolarEpoch(state.solarEpoch));
   if (state.planetName && state.origin === 'atlas') params.set('from', 'atlas');
   if (state.filter !== 'all') params.set('filter', state.filter);
   if (state.query) params.set('q', state.query);

@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-27T03:05:44.971Z",
+  "validatedAt": "2026-11-27T16:17:15.977Z",
   "mode": "preview",
   "baseUrl": "http://127.0.0.1:7100",
   "checks": [
@@ -24,7 +24,12 @@
       }
     },
     {
-      "name": "Solar System uses eight modelled planets at a fixed explicit epoch",
+      "name": "Solar System opens eight modelled planets at the preserved explicit epoch",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Solar System credits the pinned ephemeris rather than the exoplanet snapshot",
       "pass": true,
       "details": null
     },
@@ -37,6 +42,63 @@
         "height": 960,
         "scrollHeight": 960
       }
+    },
+    {
+      "name": "next-day derivation updates the existing scene and shareable URL without moving the camera",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "playback advances explicit model time at the declared rate",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "pause holds the selected epoch",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "selected Solar System epoch survives an exact-link reload at 00:00 UTC",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "camera orbit remains coherent across later epoch changes",
+      "pass": true,
+      "details": {
+        "before": {
+          "x": -8.644822976982534,
+          "y": 38.54978483853347,
+          "z": 41.366425088462755,
+          "targetX": 0,
+          "targetY": 0,
+          "targetZ": 0
+        },
+        "after": {
+          "x": -8.650449860610413,
+          "y": 38.552962087177775,
+          "z": 41.36228755175041,
+          "targetX": 0,
+          "targetY": 0,
+          "targetZ": 0
+        }
+      }
+    },
+    {
+      "name": "reset restores the preserved epoch and removes redundant URL time state",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "out-of-window date input preserves the selected epoch and visible draft without a page error",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "valid date recovery clears the input error even when the epoch was unchanged",
+      "pass": true,
+      "details": null
     },
     {
       "name": "Gaia neighbourhood discloses ICRS epoch, posterior distances, compression, and incompleteness",
@@ -359,6 +421,57 @@
       "details": null
     },
     {
+      "name": "mobile Solar System: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 375,
+        "scrollWidth": 375,
+        "height": 812,
+        "scrollHeight": 812
+      }
+    },
+    {
+      "name": "mobile Solar time controls stay viewport-bounded and clear the course and planet rail",
+      "pass": true,
+      "details": {
+        "panel": {
+          "top": 495.5,
+          "bottom": 648,
+          "left": 16,
+          "right": 359,
+          "height": 152.5
+        },
+        "course": {
+          "top": 318.90625,
+          "bottom": 370.90625,
+          "left": 22,
+          "right": 353,
+          "height": 52
+        },
+        "worlds": {
+          "top": 658,
+          "bottom": 710,
+          "left": 16,
+          "right": 359,
+          "height": 52
+        },
+        "next": {
+          "top": 530.5,
+          "bottom": 574.5,
+          "left": 252,
+          "right": 296,
+          "height": 44
+        },
+        "viewportWidth": 375,
+        "viewportHeight": 812
+      }
+    },
+    {
+      "name": "mobile epoch step preserves a 44px touch target and exact selected time",
+      "pass": true,
+      "details": null
+    },
+    {
       "name": "mobile Gaia neighbourhood: no page overflow",
       "pass": true,
       "details": {
@@ -550,6 +663,16 @@
       "details": null
     },
     {
+      "name": "reduced-motion replaces automatic playback with an explicit explanation",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "reduced-motion retains deterministic manual epoch stepping",
+      "pass": true,
+      "details": null
+    },
+    {
       "name": "reduced-motion Gaia neighbourhood: no page overflow",
       "pass": true,
       "details": {
@@ -592,9 +715,24 @@
       "details": null
     },
     {
-      "name": "no-WebGL journey reaches the Solar System",
+      "name": "no-WebGL journey reaches an honest still Solar System",
       "pass": true,
       "details": null
+    },
+    {
+      "name": "no-WebGL epoch stepping updates retained EQJ vectors and explicit still caption",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no-WebGL Solar System: no page overflow",
+      "pass": true,
+      "details": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800,
+        "scrollHeight": 800
+      }
     },
     {
       "name": "no-WebGL Gaia fallback renders all 384 traceable sources",
@@ -677,33 +815,63 @@
       "ready": true,
       "view": "earth",
       "planet": null,
-      "fps": 32,
+      "fps": 22,
       "drawCalls": 2,
       "triangles": 20896,
       "systems": 4865,
       "planets": 6473,
+      "solarEpoch": "2026-11-26T00:00:00.000Z",
+      "camera": {
+        "x": 0,
+        "y": 0.4492529737540238,
+        "z": 7.787051545069749,
+        "targetX": 0,
+        "targetY": 0,
+        "targetZ": 0
+      },
+      "transitioning": false,
       "resources": 12,
-      "transferBytes": 2280693
+      "transferBytes": 2302596
     },
     "solar": {
       "ready": true,
       "view": "solar",
       "planet": null,
-      "fps": 34,
+      "fps": 44,
       "drawCalls": 19,
       "triangles": 14754,
       "systems": 4865,
-      "planets": 6473
+      "planets": 6473,
+      "solarEpoch": "2027-01-03T00:00:00.000Z",
+      "camera": {
+        "x": -8.650449860610413,
+        "y": 38.552962087177775,
+        "z": 41.36228755175041,
+        "targetX": 0,
+        "targetY": 0,
+        "targetZ": 0
+      },
+      "transitioning": false
     },
     "neighbourhood": {
       "ready": true,
       "view": "neighbourhood",
       "planet": null,
-      "fps": 60,
+      "fps": 59,
       "drawCalls": 3,
       "triangles": 2,
       "systems": 4865,
-      "planets": 6473
+      "planets": 6473,
+      "solarEpoch": "2026-11-26T00:00:00.000Z",
+      "camera": {
+        "x": -6.121267146902763e-11,
+        "y": 7.0000000000305524,
+        "z": 43.99999999999513,
+        "targetX": 0,
+        "targetY": 0,
+        "targetZ": 0
+      },
+      "transitioning": false
     },
     "lookback": {
       "ready": true,
@@ -713,29 +881,59 @@
       "drawCalls": 3,
       "triangles": 722,
       "systems": 4865,
-      "planets": 6473
+      "planets": 6473,
+      "solarEpoch": "2026-11-26T00:00:00.000Z",
+      "camera": {
+        "x": 40.70286419357998,
+        "y": -3.692278068855854,
+        "z": -9.676979337646166,
+        "targetX": 0,
+        "targetY": 0,
+        "targetZ": 0
+      },
+      "transitioning": false
     },
     "atlas": {
       "ready": true,
       "view": "atlas",
       "planet": null,
-      "fps": 60,
+      "fps": 55,
       "drawCalls": 6,
       "triangles": 2,
       "systems": 4865,
       "planets": 6473,
-      "resources": 13,
-      "transferBytes": 2280993
+      "solarEpoch": "2026-11-26T00:00:00.000Z",
+      "camera": {
+        "x": -0.40356674564541206,
+        "y": 1.036737631740055,
+        "z": 17.96558679711696,
+        "targetX": 0,
+        "targetY": 0,
+        "targetZ": 0
+      },
+      "transitioning": false,
+      "resources": 12,
+      "transferBytes": 3600
     },
     "planet": {
       "ready": true,
       "view": "planet",
       "planet": "TRAPPIST-1 e",
-      "fps": 24,
+      "fps": 20,
       "drawCalls": 4,
       "triangles": 26498,
       "systems": 4865,
-      "planets": 6473
+      "planets": 6473,
+      "solarEpoch": "2026-11-26T00:00:00.000Z",
+      "camera": {
+        "x": -1.3380600131315084e-7,
+        "y": 0.44999999999999957,
+        "z": 7.123008113139346,
+        "targetX": 0,
+        "targetY": 0,
+        "targetZ": 0
+      },
+      "transitioning": false
     }
   },
   "screenshots": [
@@ -754,11 +952,14 @@
     "desktop-share-orbital-study.png",
     "desktop-share-portrait.png",
     "desktop-solar-reduced-motion.png",
+    "desktop-solar-selected.png",
+    "desktop-solar-time.png",
     "desktop-solar.png",
     "desktop-static-earth.png",
     "desktop-static-fallback.png",
     "desktop-static-neighbourhood.png",
     "desktop-static-share.png",
+    "desktop-static-solar.png",
     "desktop-system.png",
     "mobile-atlas.png",
     "mobile-earth.png",
@@ -768,6 +969,7 @@
     "mobile-neighbourhood.png",
     "mobile-planet.png",
     "mobile-share.png",
+    "mobile-solar.png",
     "responsive-1024-atlas.png",
     "responsive-768-atlas.png",
     "share-trappist-1-e-field-note.png",

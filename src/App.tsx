@@ -14,8 +14,9 @@ import { parseCatalogue } from './lib/catalogue';
 import { parseTraceability, validateTraceability } from './lib/traceability';
 import { DEFAULT_JOURNEY, parseJourney, updateBrowserUrl } from './lib/urlState';
 import { formatValue, generateWorld } from './lib/world';
-import { lookBackGeometry } from './lib/goldenPath';
+import { SOLAR_SNAPSHOT, lookBackGeometry } from './lib/goldenPath';
 import { GAIA_NEIGHBOURHOOD, type GaiaStar } from './lib/gaia';
+import { SOLAR_MAX_EPOCH, SOLAR_PLAYBACK_INTERVAL_MS, SOLAR_PLAYBACK_STEP_DAYS, shiftSolarEpoch } from './lib/solarTime';
 
 function positionLabel(view: ViewName, planet: PlanetRow | null): string {
   if (view === 'system') return planet?.hostname ?? 'Exoplanet system';
@@ -23,7 +24,7 @@ function positionLabel(view: ViewName, planet: PlanetRow | null): string {
   if (view === 'lookback') return `Looking home / ${planet?.hostname ?? 'unknown host'}`;
   return {
     earth: 'Earth / you are here',
-    solar: 'Solar System / fixed epoch',
+    solar: 'Solar System / selected epoch',
     neighbourhood: 'Gaia neighbourhood / J2016.0',
     atlas: 'Observed sky / archive snapshot',
     system: 'Exoplanet system',
@@ -45,6 +46,7 @@ export default function App() {
   const [sceneFailed, setSceneFailed] = useState(false);
   const [journeysOpen, setJourneysOpen] = useState(false);
   const [selectedGaia, setSelectedGaia] = useState<GaiaStar | null>(null);
+  const [solarPlaying, setSolarPlaying] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [lowPower] = useState(() => window.innerWidth < 700 || (navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4));
@@ -57,10 +59,32 @@ export default function App() {
     updateBrowserUrl(next, mode);
   }, []);
 
+  const selectSolarEpoch = useCallback((solarEpoch: string) => {
+    setSolarPlaying(false);
+    navigate({ solarEpoch }, 'replace');
+  }, [navigate]);
+
+  useEffect(() => {
+    setSolarPlaying(false);
+  }, [journey.view, reducedMotion]);
+
+  useEffect(() => {
+    if (!solarPlaying || journey.view !== 'solar' || reducedMotion) return;
+    const timer = window.setInterval(() => {
+      const current = journeyRef.current;
+      if (current.view !== 'solar') return;
+      const solarEpoch = shiftSolarEpoch(current.solarEpoch, SOLAR_PLAYBACK_STEP_DAYS);
+      navigate({ solarEpoch }, 'replace');
+      if (solarEpoch === SOLAR_MAX_EPOCH) setSolarPlaying(false);
+    }, SOLAR_PLAYBACK_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [journey.view, navigate, reducedMotion, solarPlaying]);
+
   useEffect(() => {
     const popstate = () => {
       const next = parseJourney(window.location.search);
       journeyRef.current = next;
+      setSolarPlaying(false);
       setJourney(next);
     };
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -177,6 +201,7 @@ export default function App() {
           view={journey.view}
           planet={selected}
           cameraState={journey.camera}
+          solarEpoch={journey.solarEpoch}
           reducedMotion={reducedMotion}
           lowPower={lowPower}
           onSelect={selectPlanet}
@@ -186,7 +211,7 @@ export default function App() {
           onFailure={() => { setSceneFailed(true); setSceneReady(true); }}
         />
       )}
-      {catalogue && sceneFailed && <StaticScene catalogue={catalogue} view={journey.view} planet={selected} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} />}
+      {catalogue && sceneFailed && <StaticScene catalogue={catalogue} view={journey.view} planet={selected} solarEpoch={journey.solarEpoch} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} />}
       <div className="scene-vignette" aria-hidden="true" />
 
       <header className="app-header">
@@ -198,7 +223,7 @@ export default function App() {
         <nav className="header-actions" aria-label="View actions">
           {hasWorld && selected && <button className="text-button evidence-open" onClick={() => openExperience('observatory')}>Evidence</button>}
           {hasWorld && selected && <button className="icon-button" onClick={openShare} aria-label="Share this world"><Share2 size={18} /></button>}
-          {provenance && <a className="source-link" href={journey.view === 'neighbourhood' ? GAIA_NEIGHBOURHOOD.source.catalogueDocumentation : provenance.sourceUrl} target="_blank" rel="noreferrer">{journey.view === 'neighbourhood' ? 'GAIA / DR3' : 'NASA / TAP'} <ArrowUpRight size={14} /></a>}
+          {provenance && <a className="source-link" href={journey.view === 'neighbourhood' ? GAIA_NEIGHBOURHOOD.source.catalogueDocumentation : journey.view === 'solar' ? SOLAR_SNAPSHOT.source.url : provenance.sourceUrl} target="_blank" rel="noreferrer">{journey.view === 'neighbourhood' ? 'GAIA / DR3' : journey.view === 'solar' ? `AE / ${SOLAR_SNAPSHOT.source.version}` : 'NASA / TAP'} <ArrowUpRight size={14} /></a>}
         </nav>
       </header>
 
@@ -221,7 +246,7 @@ export default function App() {
         </section>
       )}
 
-      {catalogue && <Expedition catalogue={catalogue} view={journey.view} planet={selected} gaiaStar={selectedGaia} onView={goToView} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} />}
+      {catalogue && <Expedition catalogue={catalogue} view={journey.view} planet={selected} gaiaStar={selectedGaia} solarEpoch={journey.solarEpoch} solarPlaying={solarPlaying} reducedMotion={reducedMotion} staticMode={sceneFailed} onView={goToView} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} onSolarEpoch={selectSolarEpoch} onSolarPlayingChange={setSolarPlaying} />}
 
       {catalogue && journey.view === 'atlas' && (
         <>

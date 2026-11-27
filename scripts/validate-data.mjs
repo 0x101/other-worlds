@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { Body, HelioVector, Rotation_EQJ_ECL, RotateVector } from 'astronomy-engine';
 import { buildSnapshot } from './fetch-gaia-neighbourhood.mjs';
 
 const root = process.cwd();
@@ -25,6 +26,31 @@ const expectedGaia = buildSnapshot(gaiaText, gaia.retrievedAt);
 assert(JSON.stringify(gaia) === JSON.stringify(expectedGaia), 'Gaia runtime snapshot does not exactly match its raw CSV, query, and transformations.');
 assert(gaia.rawSha256 === sha256(gaiaText), 'Gaia raw snapshot hash mismatch.');
 assert(await read('gaia-dr3-neighbourhood-query.sql') === `${gaia.query};\n`, 'Gaia query file differs from the manifest.');
+
+const solar = await json('src/data/solar-system.json');
+const solarBodies = [
+  [Body.Mercury, 'Mercury'], [Body.Venus, 'Venus'], [Body.Earth, 'Earth'], [Body.Mars, 'Mars'],
+  [Body.Jupiter, 'Jupiter'], [Body.Saturn, 'Saturn'], [Body.Uranus, 'Uranus'], [Body.Neptune, 'Neptune'],
+];
+const solarVector = (value) => [value.x, value.y, value.z].map((component) => Number(component.toFixed(12)));
+const solarRotation = Rotation_EQJ_ECL();
+assert(solar.epoch === '2026-11-26T00:00:00.000Z' && solar.source.version === '2.1.19', 'Solar reference epoch or generator version changed.');
+assert(solar.units === 'au' && solar.frame.includes('EQJ') && solar.transformation.includes('Rotation_EQJ_ECL'), 'Solar source/display frame contract changed.');
+assert(solar.bodies.length === solarBodies.length, 'Solar System must retain exactly eight planet centres.');
+let comparedSolarBodies = 0;
+for (const [body, name] of solarBodies) {
+  const expectedEqj = HelioVector(body, new Date(solar.epoch));
+  const expectedEcl = RotateVector(solarRotation, expectedEqj);
+  const actual = solar.bodies[comparedSolarBodies];
+  assert(actual.name === name, `Solar body order mismatch at ${name}.`);
+  assert(actual.heliocentricAu === Number(expectedEqj.Length().toFixed(12)), `Solar heliocentric distance mismatch for ${name}.`);
+  assert(JSON.stringify(actual.eqjAu) === JSON.stringify(solarVector(expectedEqj)), `Solar EQJ vector mismatch for ${name}.`);
+  assert(JSON.stringify(actual.eclipticAu) === JSON.stringify(solarVector(expectedEcl)), `Solar ECL vector mismatch for ${name}.`);
+  comparedSolarBodies += 1;
+}
+const selectedEpochProbe = HelioVector(Body.Mercury, new Date('2027-01-02T00:00:00.000Z'));
+assert([selectedEpochProbe.x, selectedEpochProbe.y, selectedEpochProbe.z].every(Number.isFinite), 'Selected-epoch ephemeris probe is not finite.');
+assert(JSON.stringify(solarVector(selectedEpochProbe)) !== JSON.stringify(solar.bodies[0].eqjAu), 'Selected-epoch probe did not change Mercury geometry.');
 
 assert(sha256(baseText) === '6bcd8b57617226da328e85bee5c2955755ee054ed4d775dd43f03855cb2cb362', 'The preserved base snapshot hash changed.');
 assert(base.length === 6473 && base.length === baseProvenance.rowCount, 'Base row count does not match the verified snapshot.');
@@ -63,6 +89,19 @@ const report = {
   passed: true,
   base: { rows: base.length, planets: baseByName.size, systems: new Set(base.map((row) => row.hostname)).size, sha256: sha256(baseText), preserved: true },
   traceability: { rawRows: traceRaw.length, normalizedRows: normalized.rows.length, references: normalized.references.length, rawSha256: sha256(traceText), normalizedSha256: sha256(normalizedText), comparedValues, comparedNormalizedCells },
+  solar: {
+    referenceEpoch: solar.epoch,
+    selectedEpochWindowUtc: ['2000-01-01T00:00:00.000Z', '2100-01-01T00:00:00.000Z'],
+    bodies: comparedSolarBodies,
+    generator: `Astronomy Engine ${solar.source.version}`,
+    units: solar.units,
+    sourceFrame: 'EQJ/J2000',
+    displayFrame: 'ECL/J2000',
+    exactGeneratorMatch: true,
+    selectedEpochProbe: '2027-01-02T00:00:00.000Z',
+    lightTimeCorrection: false,
+    aberrationCorrection: false,
+  },
   gaia: {
     rows: gaia.rowCount,
     uniqueSourceIds: new Set(gaia.stars.map((star) => star.source_id)).size,

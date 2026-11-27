@@ -12,6 +12,7 @@ interface SceneProps {
   view: ViewName;
   planet: PlanetRow | null;
   cameraState: CameraViewState;
+  solarEpoch: string;
   reducedMotion: boolean;
   lowPower: boolean;
   onSelect: (planet: PlanetRow) => void;
@@ -227,6 +228,7 @@ class WorldEngine {
   private departing: { group: THREE.Group; started: number }[] = [];
   private currentView: ViewName = 'earth';
   private currentPlanet: PlanetRow | null = null;
+  private currentSolarEpoch = '';
   private catalogue: Catalogue;
   private callbacks: EngineCallbacks;
   private reducedMotion: boolean;
@@ -362,11 +364,13 @@ class WorldEngine {
     this.content.add(glow);
     this.content.add(new THREE.AmbientLight(0x91a49c, 0.3));
     this.content.add(new THREE.PointLight(0xffe0ae, 240, 120, 1.4));
-    for (const body of solarDisplayBodies()) {
+    for (const body of solarDisplayBodies(this.currentSolarEpoch)) {
       const ring = new THREE.LineLoop(
         new THREE.BufferGeometry().setFromPoints(new THREE.EllipseCurve(0, 0, body.displayRadius, body.displayRadius, 0, Math.PI * 2).getPoints(180).map((point) => new THREE.Vector3(point.x, 0, point.y))),
         new THREE.LineBasicMaterial({ color: body.name === 'Earth' ? 0xc3b18e : 0x75847c, transparent: true, opacity: body.name === 'Earth' ? 0.2 : 0.075 }),
       );
+      ring.name = `solar-ring-${body.name.toLowerCase()}`;
+      ring.userData.displayRadius = body.displayRadius;
       this.content.add(ring);
       const mesh = new THREE.Mesh(
         new THREE.SphereGeometry(body.radius, this.lowPower ? 20 : 32, this.lowPower ? 14 : 22),
@@ -377,10 +381,24 @@ class WorldEngine {
       this.content.add(mesh);
       if (body.name === 'Earth') {
         const marker = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.018, 8, 64), new THREE.MeshBasicMaterial({ color: 0xdac39e, transparent: true, opacity: 0.85 }));
+        marker.name = 'solar-earth-marker';
         marker.position.copy(mesh.position);
         marker.rotation.x = Math.PI / 2;
         this.content.add(marker);
       }
+    }
+  }
+
+  setSolarEpoch(epoch: string): void {
+    this.currentSolarEpoch = epoch;
+    this.container.dataset.solarEpoch = epoch;
+    if (this.currentView !== 'solar') return;
+    for (const body of solarDisplayBodies(epoch)) {
+      const mesh = this.content.getObjectByName(`solar-${body.name.toLowerCase()}`);
+      mesh?.position.set(body.position.x, body.position.y, body.position.z);
+      const ring = this.content.getObjectByName(`solar-ring-${body.name.toLowerCase()}`);
+      if (ring) ring.scale.setScalar(body.displayRadius / (ring.userData.displayRadius as number));
+      if (body.name === 'Earth') this.content.getObjectByName('solar-earth-marker')?.position.set(body.position.x, body.position.y, body.position.z);
     }
   }
 
@@ -440,7 +458,7 @@ class WorldEngine {
     this.content.add(path);
   }
 
-  setView(view: ViewName, planet: PlanetRow | null): void {
+  setView(view: ViewName, planet: PlanetRow | null, solarEpoch: string): void {
     const instant = this.reducedMotion || !this.ready;
     const previous = this.content;
     this.scene.remove(previous);
@@ -462,6 +480,7 @@ class WorldEngine {
     this.scene.add(this.content);
     this.currentView = view;
     this.currentPlanet = planet;
+    this.setSolarEpoch(solarEpoch);
     this.controls.autoRotate = view === 'atlas' && !this.reducedMotion;
     this.controls.autoRotateSpeed = 0.12;
     this.controls.enableZoom = view !== 'planet' && view !== 'earth' && view !== 'lookback';
@@ -736,6 +755,9 @@ class WorldEngine {
         triangles: this.renderer.info.render.triangles,
         systems: this.catalogue.systems.size,
         planets: this.catalogue.planets.length,
+        solarEpoch: this.currentSolarEpoch,
+        camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z, targetX: this.controls.target.x, targetY: this.controls.target.y, targetZ: this.controls.target.z },
+        transitioning: this.transition !== null,
       };
       this.frameCount = 0;
       this.frameWindowStart = now;
@@ -743,7 +765,19 @@ class WorldEngine {
     if (!this.ready) {
       this.ready = true;
       this.container.dataset.ready = 'true';
-      window.__OTHER_WORLDS__ = { ready: true, view: this.currentView, planet: this.currentPlanet?.pl_name ?? null, fps: 0, drawCalls: this.renderer.info.render.calls, triangles: this.renderer.info.render.triangles, systems: this.catalogue.systems.size, planets: this.catalogue.planets.length };
+      window.__OTHER_WORLDS__ = {
+        ready: true,
+        view: this.currentView,
+        planet: this.currentPlanet?.pl_name ?? null,
+        fps: 0,
+        drawCalls: this.renderer.info.render.calls,
+        triangles: this.renderer.info.render.triangles,
+        systems: this.catalogue.systems.size,
+        planets: this.catalogue.planets.length,
+        solarEpoch: this.currentSolarEpoch,
+        camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z, targetX: this.controls.target.x, targetY: this.controls.target.y, targetZ: this.controls.target.z },
+        transitioning: this.transition !== null,
+      };
     }
   }
 
@@ -776,7 +810,7 @@ export default function Scene(props: SceneProps) {
         onCameraChange: (camera) => latest.current.onCameraChange(camera),
         onFailure: () => latest.current.onFailure(),
       }, props.reducedMotion, props.lowPower);
-      engineRef.current.setView(props.view, props.planet);
+      engineRef.current.setView(props.view, props.planet, props.solarEpoch);
       props.onReady();
     } catch (error) {
       console.warn('WebGL scene unavailable; using static reconstruction.', error);
@@ -791,9 +825,13 @@ export default function Scene(props: SceneProps) {
   }, []);
 
   useEffect(() => {
-    engineRef.current?.setView(props.view, props.planet);
+    engineRef.current?.setView(props.view, props.planet, props.solarEpoch);
     if (props.view === 'planet') engineRef.current?.setCamera(props.cameraState);
   }, [props.view, props.planet, props.catalogue]);
+
+  useEffect(() => {
+    engineRef.current?.setSolarEpoch(props.solarEpoch);
+  }, [props.solarEpoch]);
 
   useEffect(() => {
     engineRef.current?.setCamera(props.cameraState);

@@ -3,16 +3,18 @@ import { generateWorld, displayOrbit } from '../lib/world';
 import { hashString, skyPosition } from '../lib/catalogue';
 import { hostColor, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
 import { GAIA_NEIGHBOURHOOD, gaiaDisplayColour, gaiaDisplayPosition, type GaiaStar } from '../lib/gaia';
+import { formatSolarEpoch } from '../lib/solarTime';
 
 interface StaticSceneProps {
   catalogue: Catalogue;
   view: ViewName;
   planet: PlanetRow | null;
+  solarEpoch: string;
   onSelect: (planet: PlanetRow) => void;
   onGaiaSelect: (star: GaiaStar) => void;
 }
 
-export default function StaticScene({ catalogue, view, planet, onSelect, onGaiaSelect }: StaticSceneProps) {
+export default function StaticScene({ catalogue, view, planet, solarEpoch, onSelect, onGaiaSelect }: StaticSceneProps) {
   if (view === 'earth') {
     return (
       <div className="static-scene static-earth-scene" data-testid="static-scene">
@@ -29,13 +31,13 @@ export default function StaticScene({ catalogue, view, planet, onSelect, onGaiaS
   if (view === 'solar') {
     return (
       <div className="static-scene static-solar" data-testid="static-scene">
-        <svg viewBox="-32 -32 64 64" role="img" aria-label="Still heliocentric model of eight planets at 26 November 2026 00:00 UTC; distances compressed and bodies enlarged">
+        <svg viewBox="-32 -32 64 64" role="img" aria-label={`Still heliocentric model of eight planets at ${formatSolarEpoch(solarEpoch)}; distances compressed and bodies enlarged`}>
           <circle cx="0" cy="0" r="1.1" fill="#e7c28d" />
-          {solarDisplayBodies().map((body) => (
-            <g key={body.name}>
+          {solarDisplayBodies(solarEpoch).map((body) => (
+            <g key={body.name} data-solar-body={body.name} data-eqj-au={body.eqjAu.join(',')} data-ecl-au={body.eclipticAu.join(',')}>
               <circle cx="0" cy="0" r={body.displayRadius} fill="none" stroke="#789087" strokeOpacity="0.12" strokeWidth="0.06" />
               <circle cx={body.position.x} cy={body.position.z} r={body.radius} fill={body.color}>
-                <title>{body.name}: modelled heliocentric position</title>
+                <title>{body.name}: modelled heliocentric position at {formatSolarEpoch(solarEpoch)}</title>
               </circle>
               {body.name === 'Earth' && <circle cx={body.position.x} cy={body.position.z} r="0.65" fill="none" stroke="#dac39e" strokeWidth="0.08" />}
             </g>
