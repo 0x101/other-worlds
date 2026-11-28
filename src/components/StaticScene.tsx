@@ -2,7 +2,7 @@ import type { Catalogue, PlanetRow, ViewName } from '../types';
 import { generateWorld, displayOrbit } from '../lib/world';
 import { hashString, skyPosition } from '../lib/catalogue';
 import { hostColor, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
-import { GAIA_NEIGHBOURHOOD, gaiaDisplayColour, gaiaDisplayPosition, type GaiaStar } from '../lib/gaia';
+import { GAIA_NEIGHBOURHOOD, formatGaiaTime, gaiaDisplayColour, gaiaStateAt, type GaiaStar } from '../lib/gaia';
 import { formatSolarEpoch } from '../lib/solarTime';
 import { formatIssEpoch, issStateAt, issTraceAt } from '../lib/iss';
 import { formatMoonEpoch, moonStateAt, moonTraceAt } from '../lib/moon';
@@ -14,11 +14,12 @@ interface StaticSceneProps {
   solarEpoch: string;
   issEpoch: string | null;
   moonEpoch: string | null;
+  gaiaYearOffset: number;
   onSelect: (planet: PlanetRow) => void;
   onGaiaSelect: (star: GaiaStar) => void;
 }
 
-export default function StaticScene({ catalogue, view, planet, solarEpoch, issEpoch, moonEpoch, onSelect, onGaiaSelect }: StaticSceneProps) {
+export default function StaticScene({ catalogue, view, planet, solarEpoch, issEpoch, moonEpoch, gaiaYearOffset, onSelect, onGaiaSelect }: StaticSceneProps) {
   const iss = view === 'earth' && issEpoch ? { state: issStateAt(issEpoch), trace: issTraceAt(issEpoch) } : null;
   const moon = view === 'earth' && moonEpoch ? { state: moonStateAt(moonEpoch), trace: moonTraceAt(moonEpoch) } : null;
   if (view === 'earth') {
@@ -78,18 +79,32 @@ export default function StaticScene({ catalogue, view, planet, solarEpoch, issEp
   if (view === 'neighbourhood') {
     return (
       <div className="static-scene static-neighbourhood" data-testid="static-scene">
-        <svg viewBox="-32 -32 64 64" role="img" aria-label="Still map of 384 quality-filtered Gaia DR3 stars at J2016.0 and 96 NASA exoplanet hosts; logarithmic distances; not a complete census">
+        <svg viewBox="-32 -32 64 64" role="img" aria-label={`Still map of 384 quality-filtered Gaia DR3 stars at ${formatGaiaTime(gaiaYearOffset)} and 96 independent NASA exoplanet hosts at preserved archive directions; fixed reference-distance display; not a complete census`}>
           {GAIA_NEIGHBOURHOOD.stars.map((star) => {
-            const position = gaiaDisplayPosition(star);
+            const state = gaiaStateAt(star, gaiaYearOffset);
+            const position = state.displayPosition;
             return (
-              <circle className="gaia-star" key={star.source_id} cx={position.x} cy={position.z} r="0.13" fill={gaiaDisplayColour(star.bp_rp)} opacity="0.8" onClick={() => onGaiaSelect(star)}>
-                <title>Gaia DR3 {star.source_id}: {star.r_med_geo.toFixed(3)} parsecs, geometric posterior median; J2016.0</title>
+              <circle
+                className="gaia-star"
+                key={star.source_id}
+                cx={position.x}
+                cy={position.z}
+                r="0.13"
+                fill={gaiaDisplayColour(star.bp_rp)}
+                opacity="0.8"
+                onClick={() => onGaiaSelect(star)}
+                data-gaia-source={star.source_id}
+                data-ra-deg={state.ra}
+                data-dec-deg={state.dec}
+                data-display-position={[position.x, position.y, position.z].join(',')}
+              >
+                <title>Gaia DR3 {star.source_id}: derived direction at {formatGaiaTime(gaiaYearOffset)}; {star.r_med_geo.toFixed(3)} pc is the published J2016.0 geometric posterior median</title>
               </circle>
             );
           })}
           {nearbyHosts(catalogue).map((host) => (
-            <circle key={host.planet.hostname} cx={host.position.x} cy={host.position.z} r="0.25" fill={hostColor(host)} stroke="#f1dec0" strokeWidth="0.05" opacity="0.9" onClick={() => onSelect(host.planet)}>
-              <title>{host.planet.hostname}: {host.distancePc.toFixed(2)} parsecs, NASA archive-reported</title>
+            <circle className="nasa-exoplanet-host" key={host.planet.hostname} cx={host.position.x} cy={host.position.z} r="0.25" fill={hostColor(host)} stroke="#f1dec0" strokeWidth="0.05" opacity="0.9" onClick={() => onSelect(host.planet)}>
+              <title>{host.planet.hostname}: {host.distancePc.toFixed(2)} parsecs, NASA archive-reported; direction unchanged by Gaia selected time</title>
             </circle>
           ))}
           <circle cx="0" cy="0" r="0.5" fill="#e5c49a"><title>Sun / home</title></circle>

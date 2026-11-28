@@ -494,9 +494,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .view-neighbourhood .expedition-actions { margin-top: 14px; }
   .gaia-method { margin-top: 8px; }
   .gaia-method summary { min-height: 44px; }
-  .gaia-method > div { position: fixed; z-index: 30; left: 16px; right: 16px; bottom: 88px; max-height: 54vh; background: var(--p-ink); }
+  .gaia-method > div { position: fixed; z-index: 30; top: 56%; left: 16px; right: 16px; bottom: 88px; max-height: none; background: var(--p-ink); }
   .gaia-method-close { width: 44px; height: 44px; }
-  .gaia-inspector { top: auto; left: 16px; right: 16px; bottom: 88px; width: auto; max-height: 52vh; padding: 16px 18px; overflow-y: auto; background: var(--p-ink); }
+  .gaia-inspector { top: 56%; left: 16px; right: 16px; bottom: 88px; width: auto; max-height: none; padding: 16px 18px; overflow-y: auto; background: var(--p-ink); }
   .gaia-inspector > .icon-button { top: 4px; right: 4px; width: 44px; height: 44px; }
   .gaia-inspector > strong { margin-top: 12px; margin-bottom: 14px; font-size: 23px; }
   .gaia-inspector dl > div { padding: 6px 0; }
@@ -540,6 +540,45 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .solar-date input { min-height: 40px; }
   .solar-time-status { margin-top: 5px; font-size: 7px; }
   .view-solar .solar-worlds { left: 16px; right: 16px; max-width: none; }
+}
+
+/* Gaia selected-time instrument: the same persistent sky, with explicit model limits. */
+.gaia-time { position: absolute; z-index: 14; right: 3.1vw; bottom: calc(96px + env(safe-area-inset-bottom)); width: min(370px, 34vw); padding: 14px 16px; border: 1px solid var(--p-line); background: oklch(0.145 0.014 175 / .86); backdrop-filter: blur(18px); }
+.gaia-time-readout { display: grid; gap: 5px; }
+.gaia-time-readout > span { color: var(--p-faint); font-size: 8px; letter-spacing: .14em; text-transform: uppercase; }
+.gaia-time-readout > output { color: var(--text); font-size: 11px; font-variant-numeric: tabular-nums; letter-spacing: .035em; }
+.gaia-time-actions { display: flex; gap: 6px; margin-top: 10px; }
+.gaia-time-actions .text-button { margin-left: auto; font-size: 10px; }
+.gaia-time-slider { display: grid; gap: 4px; margin-top: 8px; color: var(--text-muted); font-size: 8px; letter-spacing: .04em; }
+.gaia-time-slider input { width: 100%; min-height: 30px; margin: 0; accent-color: var(--p-accent); cursor: pointer; }
+.gaia-time-bounds { display: flex; justify-content: space-between; margin-top: -5px; color: var(--p-faint); font-size: 7px; font-variant-numeric: tabular-nums; }
+.gaia-time > p { margin: 7px 0 0; color: var(--p-faint); font-size: 8px; line-height: 1.5; }
+.gaia-inspector dd .gaia-motion-value { display: block; margin-top: 3px; }
+.gaia-inspector .gaia-inspector-limit { display: block; margin: 0 0 12px; color: var(--p-faint); font-size: 8px; line-height: 1.55; letter-spacing: 0; }
+
+@media (min-width: 641px) {
+  .gaia-method > div { bottom: calc(306px + env(safe-area-inset-bottom)); max-height: 48vh; }
+  .gaia-inspector { bottom: calc(306px + env(safe-area-inset-bottom)); overflow-y: auto; }
+}
+
+@media (max-width: 900px) and (min-width: 641px) {
+  .gaia-time { width: 38vw; padding: 12px; }
+  .gaia-time-actions .text-button { font-size: 9px; }
+}
+
+@media (max-width: 640px) {
+  .gaia-time { left: 16px; right: 16px; bottom: calc(112px + env(safe-area-inset-bottom)); width: auto; padding: 9px 12px; }
+  .gaia-time-readout { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .gaia-time-readout > span { font-size: 7px; }
+  .gaia-time-readout > output { font-size: 9px; text-align: right; }
+  .gaia-time-actions { margin-top: 6px; }
+  .gaia-time-actions .icon-button { width: 44px; height: 44px; }
+  .gaia-time-slider { margin-top: 4px; }
+  .gaia-time-slider input { min-height: 44px; }
+  .gaia-time > p { margin-top: 5px; font-size: 7px; }
+  .gaia-time-suppressed { display: none; }
+  .neighbourhood-copy.gaia-inspection-active .expedition-actions .text-button { display: none; }
+  .gaia-inspector .gaia-inspector-limit { font-size: 8px; }
 }
 
 /* Optional Earth expeditions: selected-time derivations, never live trackers. */

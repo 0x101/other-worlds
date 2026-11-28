@@ -1,10 +1,12 @@
+import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Home, X } from 'lucide-react';
 import type { Catalogue, PlanetRow, ViewName } from '../types';
 import { GOLDEN_PLANET, VIEW_CONTEXT, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
-import { GAIA_BY_ID, GAIA_NEIGHBOURHOOD, type GaiaStar } from '../lib/gaia';
+import { GAIA_BY_ID, GAIA_NEIGHBOURHOOD, formatGaiaTime, gaiaStateAt, type GaiaStar } from '../lib/gaia';
 import { DEFAULT_ISS_EPOCH } from '../lib/iss';
 import { DEFAULT_MOON_EPOCH } from '../lib/moon';
 import SolarTimeControls from './SolarTimeControls';
+import GaiaTimeControls from './GaiaTimeControls';
 import IssExpedition from './IssExpedition';
 import MoonExpedition from './MoonExpedition';
 
@@ -16,6 +18,7 @@ interface ExpeditionProps {
   solarEpoch: string;
   issEpoch: string | null;
   moonEpoch: string | null;
+  gaiaYearOffset: number;
   solarPlaying: boolean;
   reducedMotion: boolean;
   staticMode: boolean;
@@ -25,6 +28,7 @@ interface ExpeditionProps {
   onSolarEpoch: (epoch: string) => void;
   onIssEpoch: (epoch: string | null) => void;
   onMoonEpoch: (epoch: string | null) => void;
+  onGaiaYearOffset: (offset: number) => void;
   onSolarPlayingChange: (playing: boolean) => void;
 }
 
@@ -37,7 +41,9 @@ function Context({ view }: { view: ViewName }) {
   );
 }
 
-export default function Expedition({ catalogue, view, planet, gaiaStar, solarEpoch, issEpoch, moonEpoch, solarPlaying, reducedMotion, staticMode, onView, onSelect, onGaiaSelect, onSolarEpoch, onIssEpoch, onMoonEpoch, onSolarPlayingChange }: ExpeditionProps) {
+export default function Expedition({ catalogue, view, planet, gaiaStar, solarEpoch, issEpoch, moonEpoch, gaiaYearOffset, solarPlaying, reducedMotion, staticMode, onView, onSelect, onGaiaSelect, onSolarEpoch, onIssEpoch, onMoonEpoch, onGaiaYearOffset, onSolarPlayingChange }: ExpeditionProps) {
+  const [gaiaMethodOpen, setGaiaMethodOpen] = useState(false);
+  useEffect(() => setGaiaMethodOpen(false), [view]);
   if (view === 'earth') {
     return (
       <>
@@ -91,23 +97,25 @@ export default function Expedition({ catalogue, view, planet, gaiaStar, solarEpo
     const hosts = nearbyHosts(catalogue);
     const destination = catalogue.byName.get(GOLDEN_PLANET);
     const stars = GAIA_NEIGHBOURHOOD.stars;
+    const selectedGaiaState = gaiaStar ? gaiaStateAt(gaiaStar, gaiaYearOffset) : null;
     return (
       <>
-        <section className="expedition-copy neighbourhood-copy">
+        <section className={`expedition-copy neighbourhood-copy${gaiaStar ? ' gaia-inspection-active' : ''}`}>
           <button className="back-button" onClick={() => onView('solar')}><ArrowLeft size={16} />Back to the Solar System</button>
-          <span className="section-label">Gaia DR3 neighbourhood / J2016.0</span>
+          <span className="section-label">Gaia DR3 neighbourhood / {gaiaYearOffset === 0 ? 'J2016.0' : formatGaiaTime(gaiaYearOffset)}</span>
           <h1>Other suns.<br /><em>Real directions.</em></h1>
           <p>{stars.length} nearby stars with high-confidence Gaia astrometry. Larger lights mark {hosts.length} exoplanet hosts from the preserved NASA snapshot.</p>
           <div className="expedition-actions">
             {destination && <button className="primary-button" onClick={() => onSelect(destination)}>Plot course for TRAPPIST-1 <ArrowRight size={18} /></button>}
             <button className="text-button" onClick={() => onView('atlas')}>Open the full exoplanet atlas <ArrowUpRight size={15} /></button>
           </div>
-          <details className="gaia-method">
+          <details className="gaia-method" onToggle={(event) => setGaiaMethodOpen(event.currentTarget.open)}>
             <summary>Catalogue &amp; distance method</summary>
             <div>
               <button className="icon-button gaia-method-close" onClick={(event) => event.currentTarget.closest('details')?.removeAttribute('open')} aria-label="Close catalogue and distance method"><X size={14} /></button>
               <p>Largest-parallax sources inside a 20 pc gate, with G ≤ 12, parallax S/N ≥ 20, RUWE ≤ 1.4, at least 10 visibility periods, and five-parameter solutions. This is not a complete census.</p>
-              <p>Positions are ICRS-aligned at J2016.0. Distances are Bailer–Jones geometric posterior medians with 16th–84th percentile intervals—not direct parallax inversion. Colour and point size are display encodings.</p>
+              <p>Measured ICRS-aligned directions and proper motions begin at J2016.0 (TCB). Gaia pmra is μα* = μα cos δ. Selected times use constant Cartesian transverse velocity with the Bailer–Jones median distance. Radial velocity is zero only as an explicit model assumption; full covariance is not propagated.</p>
+              <p>Published geometric posterior medians and 16th–84th percentile intervals remain J2016.0 distances—not direct parallax inversion or selected-time intervals. Each star’s logarithmic display radius stays fixed at its reference median while its direction moves. The independent NASA hosts remain at archive directions and are not a Gaia crossmatch.</p>
               <label>Inspect by Gaia source ID
                 <select value={gaiaStar?.source_id ?? ''} onChange={(event) => {
                   onGaiaSelect(GAIA_BY_ID.get(event.target.value) ?? null);
@@ -117,25 +125,29 @@ export default function Expedition({ catalogue, view, planet, gaiaStar, solarEpo
                   {stars.map((star) => <option key={star.source_id} value={star.source_id}>{star.source_id} · {star.r_med_geo.toFixed(2)} pc</option>)}
                 </select>
               </label>
-              <nav aria-label="Gaia scientific sources"><a href={GAIA_NEIGHBOURHOOD.source.catalogueDocumentation} target="_blank" rel="noreferrer">Gaia DR3 documentation <ArrowUpRight size={12} /></a><a href={GAIA_NEIGHBOURHOOD.source.distanceReference} target="_blank" rel="noreferrer">Distance method <ArrowUpRight size={12} /></a></nav>
+              <nav aria-label="Gaia scientific sources"><a href={GAIA_NEIGHBOURHOOD.source.catalogueDocumentation} target="_blank" rel="noreferrer">Gaia DR3 documentation <ArrowUpRight size={12} /></a><a href={GAIA_NEIGHBOURHOOD.source.astrometryDocumentation} target="_blank" rel="noreferrer">Astrometry field definitions <ArrowUpRight size={12} /></a><a href={GAIA_NEIGHBOURHOOD.source.distanceReference} target="_blank" rel="noreferrer">Distance method <ArrowUpRight size={12} /></a></nav>
             </div>
           </details>
         </section>
-        {gaiaStar && (
+        <GaiaTimeControls offset={gaiaYearOffset} staticMode={staticMode} suppressed={gaiaMethodOpen || gaiaStar !== null} onOffset={onGaiaYearOffset} />
+        {gaiaStar && selectedGaiaState && (
           <aside className="gaia-inspector" aria-label="Selected Gaia source" aria-live="polite">
             <button className="icon-button" onClick={() => onGaiaSelect(null)} aria-label="Close Gaia source inspector"><X size={15} /></button>
             <span className="section-label">MEASURED ASTROMETRY · DERIVED DISTANCE</span>
             <strong>Gaia DR3 {gaiaStar.source_id}</strong>
             <dl>
-              <div><dt>Distance</dt><dd>{gaiaStar.r_med_geo.toFixed(4)} pc <small>{gaiaStar.r_lo_geo.toFixed(4)}–{gaiaStar.r_hi_geo.toFixed(4)}</small></dd></div>
+              <div><dt>J2016.0 distance</dt><dd>{gaiaStar.r_med_geo.toFixed(4)} pc <small>{gaiaStar.r_lo_geo.toFixed(4)}–{gaiaStar.r_hi_geo.toFixed(4)} · 16th–84th percentile</small></dd></div>
+              <div><dt>Selected-time RA / Dec</dt><dd>{selectedGaiaState.ra.toFixed(6)}° / {selectedGaiaState.dec.toFixed(6)}° <small>Derived · ICRS-aligned · TCB</small></dd></div>
+              <div><dt>Proper motion μα* / μδ</dt><dd>{gaiaStar.pmra.toFixed(3)} ± {gaiaStar.pmra_error.toFixed(3)} / {gaiaStar.pmdec.toFixed(3)} ± {gaiaStar.pmdec_error.toFixed(3)} <small>mas / Julian year · measured</small></dd></div>
               <div><dt>Parallax</dt><dd>{gaiaStar.parallax.toFixed(3)} ± {gaiaStar.parallax_error.toFixed(3)} mas</dd></div>
               <div><dt>Gaia G / BP−RP</dt><dd>{gaiaStar.phot_g_mean_mag.toFixed(2)} / {gaiaStar.bp_rp.toFixed(2)} mag</dd></div>
               <div><dt>RUWE / visibility</dt><dd>{gaiaStar.ruwe.toFixed(2)} / {gaiaStar.visibility_periods_used} periods</dd></div>
             </dl>
-            <span>J2016.0 · TCB · ICRS-aligned</span>
+            <span className="gaia-inspector-limit">Selected-time direction is derived. Radial velocity is zero by assumption; no full-covariance propagation or selected-time distance interval is claimed. Display radius remains fixed at the reference median.</span>
+            <span>{formatGaiaTime(gaiaYearOffset)} · ICRS-aligned</span>
           </aside>
         )}
-        <div className="expedition-disclosure">Gaia DR3 direction · geometric posterior distance · logarithmic display · not a complete census</div>
+        <div className="expedition-disclosure">Gaia DR3 measured J2016.0 astrometry · derived selected-time directions · fixed reference-distance display · not a complete census</div>
         <Context view={view} />
       </>
     );

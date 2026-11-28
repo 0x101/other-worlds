@@ -109,6 +109,7 @@ export interface JourneyState {
   solarEpoch: string;
   issEpoch: string | null;
   moonEpoch: string | null;
+  gaiaYearOffset: number;
   planetName: string | null;
   origin: JourneyOrigin;
   filter: FilterName;

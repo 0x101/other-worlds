@@ -9,7 +9,19 @@
     "label": "J2016.0",
     "timeScale": "TCB"
   },
-  "frame": "ICRS-aligned Gaia-CRF3 direction; no epoch propagation",
+  "motionModel": {
+    "status": "DERIVED",
+    "method": "Constant Cartesian transverse velocity from local tangent pmra (mu_alpha_star, already including cos(dec)) and pmdec, seeded at J2016.0 with r_med_geo; radial velocity is zero by explicit model assumption.",
+    "minYearOffset": -10000,
+    "maxYearOffset": 10000,
+    "stepYears": 1000,
+    "offsetUnit": "Julian year",
+    "timeScale": "TCB",
+    "radialVelocityPolicy": "Radial velocity is not retained in this bounded slice. The zero-radial-velocity component is a disclosed approximation, never an observed or inferred zero.",
+    "uncertaintyPolicy": "Source pmra_error and pmdec_error remain attached at J2016.0. No selected-time covariance or credible region is claimed because full astrometric covariances, distance uncertainty propagation, and radial-velocity uncertainty are not modeled.",
+    "distancePolicy": "Published r_med_geo/r_lo_geo/r_hi_geo remain J2016.0 geometric posterior values. The display radius stays fixed at r_med_geo while only derived direction changes; no selected-time distance interval is invented."
+  },
+  "frame": "ICRS-aligned Gaia-CRF3; J2016.0 reference directions with optional derived selected-time proper-motion propagation",
   "origin": "Sun; published geometric distances are heliocentric",
   "units": {
     "ra": "degree",
@@ -30,6 +42,7 @@
   "source": {
     "catalogue": "Gaia DR3 gaia_source; DR3 retains the EDR3 astrometry and source list",
     "catalogueDocumentation": "https://www.cosmos.esa.int/web/gaia/dr3",
+    "astrometryDocumentation": "https://gea.esac.esa.int/archive/documentation/GDR3/Gaia_archive/chap_datamodel/sec_dm_main_source_catalogue/ssec_dm_gaia_source.html",
     "archivePartner": "ARI (Astronomisches Rechen-Institut, Heidelberg), Gaia Archive partner TAP mirror",
     "endpoint": "https://gaia.ari.uni-heidelberg.de/tap/sync",
     "distanceTable": "gaiaedr3_complements.distances",
@@ -51,11 +64,13 @@
   "query": "SELECT TOP 384 g.source_id AS gaia_source_id, g.ra, g.dec, g.ref_epoch, g.parallax, g.parallax_error, g.parallax_over_error, g.pmra, g.pmra_error, g.pmdec, g.pmdec_error, g.phot_g_mean_mag, g.bp_rp, g.ruwe, g.astrometric_params_solved, g.visibility_periods_used, g.ipd_frac_multi_peak, g.astrometric_sigma5d_max, d.r_med_geo, d.r_lo_geo, d.r_hi_geo\nFROM gaiadr3.gaia_source AS g\nJOIN gaiaedr3_complements.distances AS d ON d.source_id = g.source_id\nWHERE g.parallax >= 50.0\nAND g.parallax_over_error >= 20.0\nAND g.ruwe <= 1.4\nAND g.visibility_periods_used >= 10\nAND g.astrometric_params_solved = 31\nAND g.phot_g_mean_mag <= 12.0\nAND g.bp_rp IS NOT NULL\nAND g.pmra IS NOT NULL\nAND g.pmdec IS NOT NULL\nAND d.r_med_geo > 0\nAND d.r_lo_geo > 0\nAND d.r_hi_geo >= d.r_med_geo\nAND d.r_med_geo >= d.r_lo_geo\nORDER BY parallax DESC, gaia_source_id ASC",
   "transformations": [
     "Gaia source IDs remain decimal strings and are never converted to JavaScript numbers.",
-    "Displayed distance is the published r_med_geo geometric posterior median, not 1000/parallax; r_lo_geo and r_hi_geo remain attached as the 16th–84th percentile interval.",
-    "Unit direction uses ICRS-aligned J2016.0 RA/Dec: x=cos(dec)cos(ra), y=sin(dec), z=cos(dec)sin(ra).",
-    "Display radius is 5 + 13*log10(distancePc + 1) scene units. This logarithmic transform is visual compression, not a physical coordinate.",
+    "Displayed distance is the published r_med_geo geometric posterior median, not 1000/parallax; r_lo_geo and r_hi_geo remain attached as the J2016.0 16th–84th percentile interval.",
+    "Reference unit direction uses ICRS-aligned J2016.0 RA/Dec: x=cos(dec)cos(ra), y=sin(dec), z=cos(dec)sin(ra).",
+    "Selected-time directions use r = r_med_geo*u + deltaTCBJulianYears*r_med_geo*(pmra*e_ra + pmdec*e_dec)*pi/(180*3600*1000), then normalize only for direction. pmra is mu_alpha_star and receives no additional cos(dec). Radial velocity is omitted by explicit approximation.",
+    "Display radius is fixed at 5 + 13*log10(r_med_geo + 1) scene units for every selected time. This logarithmic transform is visual compression, not a physical coordinate or selected-time distance estimate.",
     "BP-RP colour drives the disclosed display colour ramp; G magnitude is retained for selection and inspection. Point glyphs are not resolved stellar images.",
-    "No proper-motion propagation, parallax zero-point correction, live claim, or missing-distance fallback is applied."
+    "The NASA host overlay remains at preserved archive directions and is not propagated or represented as a Gaia crossmatch.",
+    "No parallax zero-point correction, live claim, full selected-time covariance, perspective acceleration, binary/orbital acceleration, or missing-distance fallback is applied."
   ],
   "stars": [
     {

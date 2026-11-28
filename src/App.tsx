@@ -15,19 +15,19 @@ import { parseTraceability, validateTraceability } from './lib/traceability';
 import { DEFAULT_JOURNEY, parseJourney, updateBrowserUrl } from './lib/urlState';
 import { formatValue, generateWorld } from './lib/world';
 import { SOLAR_SNAPSHOT, lookBackGeometry } from './lib/goldenPath';
-import { GAIA_NEIGHBOURHOOD, type GaiaStar } from './lib/gaia';
+import { GAIA_NEIGHBOURHOOD, formatGaiaTime, type GaiaStar } from './lib/gaia';
 import { SOLAR_MAX_EPOCH, SOLAR_PLAYBACK_INTERVAL_MS, SOLAR_PLAYBACK_STEP_DAYS, shiftSolarEpoch } from './lib/solarTime';
 import { ISS_EXPEDITION } from './lib/iss';
 import { MOON_EXPEDITION } from './lib/moon';
 
-function positionLabel(view: ViewName, planet: PlanetRow | null): string {
+function positionLabel(view: ViewName, planet: PlanetRow | null, gaiaYearOffset: number): string {
   if (view === 'system') return planet?.hostname ?? 'Exoplanet system';
   if (view === 'planet') return planet ? `${planet.pl_name} / portrait` : 'Planet portrait';
   if (view === 'lookback') return `Looking home / ${planet?.hostname ?? 'unknown host'}`;
   return {
     earth: 'Earth / you are here',
     solar: 'Solar System / selected epoch',
-    neighbourhood: 'Gaia neighbourhood / J2016.0',
+    neighbourhood: `Gaia neighbourhood / ${formatGaiaTime(gaiaYearOffset)}`,
     atlas: 'Observed sky / archive snapshot',
     system: 'Exoplanet system',
     planet: 'Planet portrait',
@@ -64,6 +64,10 @@ export default function App() {
   const selectSolarEpoch = useCallback((solarEpoch: string) => {
     setSolarPlaying(false);
     navigate({ solarEpoch }, 'replace');
+  }, [navigate]);
+
+  const selectGaiaYearOffset = useCallback((gaiaYearOffset: number) => {
+    navigate({ gaiaYearOffset }, 'replace');
   }, [navigate]);
 
   const changeIssEpoch = useCallback((issEpoch: string | null) => {
@@ -222,7 +226,7 @@ export default function App() {
           cameraState={journey.camera}
           solarEpoch={journey.solarEpoch}
           issEpoch={journey.issEpoch}
-          moonEpoch={journey.moonEpoch}
+          moonEpoch={journey.moonEpoch} gaiaYearOffset={journey.gaiaYearOffset}
           reducedMotion={reducedMotion}
           lowPower={lowPower}
           onSelect={selectPlanet}
@@ -232,7 +236,7 @@ export default function App() {
           onFailure={() => { setSceneFailed(true); setSceneReady(true); }}
         />
       )}
-      {catalogue && sceneFailed && <StaticScene catalogue={catalogue} view={journey.view} planet={selected} solarEpoch={journey.solarEpoch} issEpoch={journey.issEpoch} moonEpoch={journey.moonEpoch} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} />}
+      {catalogue && sceneFailed && <StaticScene catalogue={catalogue} view={journey.view} planet={selected} solarEpoch={journey.solarEpoch} issEpoch={journey.issEpoch} moonEpoch={journey.moonEpoch} gaiaYearOffset={journey.gaiaYearOffset} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} />}
       <div className="scene-vignette" aria-hidden="true" />
 
       <header className="app-header">
@@ -240,7 +244,7 @@ export default function App() {
           <Orbit size={25} strokeWidth={1.25} />
           <span>OTHER<br />WORLDS</span>
         </button>
-        <div className="journey-position" aria-live="polite">{issActive ? 'Earth / ISS selected epoch' : moonActive ? 'Earth / Moon selected epoch' : positionLabel(journey.view, selected)}</div>
+        <div className="journey-position" aria-live="polite">{issActive ? 'Earth / ISS selected epoch' : moonActive ? 'Earth / Moon selected epoch' : positionLabel(journey.view, selected, journey.gaiaYearOffset)}</div>
         <nav className="header-actions" aria-label="View actions">
           {hasWorld && selected && <button className="text-button evidence-open" onClick={() => openExperience('observatory')}>Evidence</button>}
           {hasWorld && selected && <button className="icon-button" onClick={openShare} aria-label="Share this world"><Share2 size={18} /></button>}
@@ -267,7 +271,7 @@ export default function App() {
         </section>
       )}
 
-      {catalogue && <Expedition catalogue={catalogue} view={journey.view} planet={selected} gaiaStar={selectedGaia} solarEpoch={journey.solarEpoch} issEpoch={journey.issEpoch} moonEpoch={journey.moonEpoch} solarPlaying={solarPlaying} reducedMotion={reducedMotion} staticMode={sceneFailed} onView={goToView} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} onSolarEpoch={selectSolarEpoch} onIssEpoch={changeIssEpoch} onMoonEpoch={changeMoonEpoch} onSolarPlayingChange={setSolarPlaying} />}
+      {catalogue && <Expedition catalogue={catalogue} view={journey.view} planet={selected} gaiaStar={selectedGaia} solarEpoch={journey.solarEpoch} issEpoch={journey.issEpoch} moonEpoch={journey.moonEpoch} gaiaYearOffset={journey.gaiaYearOffset} solarPlaying={solarPlaying} reducedMotion={reducedMotion} staticMode={sceneFailed} onView={goToView} onSelect={selectPlanet} onGaiaSelect={setSelectedGaia} onSolarEpoch={selectSolarEpoch} onIssEpoch={changeIssEpoch} onMoonEpoch={changeMoonEpoch} onGaiaYearOffset={selectGaiaYearOffset} onSolarPlayingChange={setSolarPlaying} />}
 
       {catalogue && journey.view === 'atlas' && (
         <>

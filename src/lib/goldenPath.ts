@@ -32,7 +32,7 @@ export const SOLAR_SNAPSHOT = snapshot as SolarSnapshot;
 export const VIEW_CONTEXT: Record<ViewName, { position: string; scale: string; frame: string }> = {
   earth: { position: 'Earth / you are here', scale: 'Local portrait · body size enlarged', frame: 'Composite surface · not live' },
   solar: { position: 'Sun / Solar System', scale: 'Logarithmic distance · enlarged bodies', frame: 'ECL J2000 display · selected UTC epoch' },
-  neighbourhood: { position: 'Sun / Gaia DR3 neighbourhood', scale: 'Logarithmic parsecs · distance intervals retained', frame: 'ICRS-aligned · J2016.0 · TCB' },
+  neighbourhood: { position: 'Sun / Gaia DR3 neighbourhood', scale: 'Reference-distance display · intervals retained', frame: 'ICRS-aligned · selected Julian-year offset · TCB' },
   atlas: { position: 'Sun / observed exoplanet sky', scale: 'Logarithmic parsecs', frame: 'NASA archive RA/Dec · snapshot' },
   system: { position: 'Selected exoplanet host', scale: 'Compressed orbital radii', frame: 'Archive orbit fields · phases illustrative' },
   planet: { position: 'Selected exoplanet portrait', scale: 'Normalized body portrait', frame: 'Evidence-bound · surface imagined' },

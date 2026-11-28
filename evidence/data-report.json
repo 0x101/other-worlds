@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-27T22:56:32.502Z",
+  "validatedAt": "2026-11-28T06:07:43.780Z",
   "passed": true,
   "base": {
     "rows": 6473,
@@ -90,6 +90,31 @@
       1.8281064,
       14.2755337
     ],
+    "selectedTime": {
+      "status": "DERIVED",
+      "yearOffsetWindow": [
+        -10000,
+        10000
+      ],
+      "stepYears": 1000,
+      "timeScale": "TCB",
+      "probeSourceId": "4472832130942575872",
+      "probeYearOffset": 1000,
+      "referenceRaDecDeg": [
+        269.44850252543836,
+        4.739420051112413
+      ],
+      "probeRaDecDeg": [
+        269.22415225477783,
+        7.615387229063911
+      ],
+      "angularChangeDeg": 2.884601639026622,
+      "referenceDistancePc": 1.8281063999999998,
+      "probeModelDistancePc": 1.8304256993182295,
+      "fixedDisplayRadius": 10.869444679928385,
+      "radialVelocityAssumption": 0,
+      "selectedTimeCovariance": null
+    },
     "exactRawRuntimeMatch": true
   },
   "referenceWorlds": [

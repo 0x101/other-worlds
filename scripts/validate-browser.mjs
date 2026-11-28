@@ -6,12 +6,16 @@ import { chromium } from '@playwright/test';
 import { json2satrec, propagate } from 'satellite.js';
 import { GeoMoon, Rotation_EQJ_ECL, RotateVector } from 'astronomy-engine';
 import * as THREE from 'three';
+import { BARNARD_SOURCE_ID, independentGaiaState } from './gaia-motion-reference.mjs';
 
 const root = process.cwd();
 const mode = process.argv.includes('--preview') ? 'preview' : 'development';
 const evidenceDir = path.join(root, 'evidence');
 const base = 'http://127.0.0.1:7100';
 const gaia = JSON.parse(await readFile(path.join(root, 'src/data/gaia-neighbourhood.json'), 'utf8'));
+const barnard = gaia.stars.find((star) => star.source_id === BARNARD_SOURCE_ID);
+if (!barnard) throw new Error('Barnard’s Star is missing from browser validation data.');
+const barnardAt1000 = independentGaiaState(barnard, 1000);
 const iss = JSON.parse(await readFile(path.join(root, 'src/data/iss-expedition.json'), 'utf8'));
 const moon = JSON.parse(await readFile(path.join(root, 'src/data/moon-expedition.json'), 'utf8'));
 const issSatrec = json2satrec(iss.elements);
@@ -267,28 +271,81 @@ try {
 
   await page.getByRole('button', { name: 'Travel to nearby suns' }).click();
   await ready(page, 'neighbourhood');
-  check('Gaia neighbourhood discloses ICRS epoch, posterior distances, compression, and incompleteness', await page.getByText('Gaia DR3 direction · geometric posterior distance · logarithmic display · not a complete census', { exact: true }).isVisible() && await page.getByText('Gaia DR3 neighbourhood / J2016.0', { exact: true }).isVisible());
+  check('Gaia neighbourhood discloses measured reference astrometry, derived time, fixed display radius, and incompleteness', await page.getByText('Gaia DR3 measured J2016.0 astrometry · derived selected-time directions · fixed reference-distance display · not a complete census', { exact: true }).isVisible() && await page.getByText('Gaia DR3 neighbourhood / J2016.0', { exact: true }).isVisible());
+  check('Gaia selected time starts at J2016.0 with no playback or redundant URL state', await page.locator('.gaia-time output').textContent() === 'J2016.0 · reference epoch · TCB' && !page.url().includes('gaiaTime=') && await page.getByRole('button', { name: /Play/ }).count() === 0 && await page.getByRole('button', { name: 'Reset to Gaia J2016.0' }).isDisabled());
   await noOverflow(page, 'desktop Gaia neighbourhood');
   await shot(page, 'desktop-neighbourhood');
+  await page.evaluate(() => { window.__gaiaValidationCanvas = document.querySelector('.scene-canvas canvas'); });
+  const gaiaBefore = await page.evaluate(() => ({ camera: { ...window.__OTHER_WORLDS__.camera }, nasa: document.querySelector('.scene-canvas')?.dataset.nasaHostPositions }));
+  await page.getByRole('button', { name: 'Next 1,000 years' }).click();
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.gaiaYearOffset === '1000');
+  await ready(page, 'neighbourhood');
+  check('Gaia thousand-year step updates the exact URL and readout', page.url().includes('view=neighbourhood&gaiaTime=1000') && await page.locator('.gaia-time output').textContent() === 'J2016.0 + 1,000 Julian years · TCB' && await page.evaluate(() => window.__OTHER_WORLDS__?.gaiaYearOffset === 1000));
+  check('Gaia time preserves canvas, camera, controls, and the independent NASA host geometry', await page.evaluate((before) => {
+    const camera = window.__OTHER_WORLDS__.camera;
+    return window.__gaiaValidationCanvas === document.querySelector('.scene-canvas canvas') && Object.keys(before.camera).every((key) => Math.abs(camera[key] - before.camera[key]) < 0.000001) && document.querySelector('.scene-canvas')?.dataset.nasaHostPositions === before.nasa;
+  }, gaiaBefore));
+  check('WebGL Barnard probe matches independent selected-time RA/Dec and actual Float32 display coordinates', await page.evaluate((expected) => {
+    const data = document.querySelector('.scene-canvas')?.dataset;
+    const display = data?.gaiaBarnardDisplay?.split(',').map(Number) ?? [];
+    return Math.abs(Number(data?.gaiaBarnardRaDeg) - expected.ra) < 1e-10 && Math.abs(Number(data?.gaiaBarnardDecDeg) - expected.dec) < 1e-10 && display.length === 3 && display.every((value, index) => Math.abs(value - expected.displayPosition[index]) < 0.000002) && Math.abs(Math.hypot(...display) - expected.displayRadius) < 0.000002;
+  }, barnardAt1000), { expected: barnardAt1000 });
+  await shot(page, 'desktop-gaia-selected-time');
+  const selectedGaiaUrl = page.url();
+  await page.reload({ waitUntil: 'networkidle' });
+  await ready(page, 'neighbourhood');
+  check('Gaia exact-link reload restores the selected integer offset and derived geometry', page.url() === selectedGaiaUrl && await page.locator('.gaia-time output').textContent() === 'J2016.0 + 1,000 Julian years · TCB' && await page.evaluate((expected) => window.__OTHER_WORLDS__?.gaiaYearOffset === 1000 && Math.abs(Number(document.querySelector('.scene-canvas')?.dataset.gaiaBarnardDecDeg) - expected.dec) < 1e-10, barnardAt1000));
+  await page.evaluate(() => { window.__gaiaValidationCanvas = document.querySelector('.scene-canvas canvas'); });
+  const gaiaAfterReload = await page.evaluate(() => ({ camera: { ...window.__OTHER_WORLDS__.camera }, nasa: document.querySelector('.scene-canvas')?.dataset.nasaHostPositions }));
+  const gaiaSlider = page.getByRole('slider', { name: 'Years from Gaia J2016.0' });
+  await gaiaSlider.focus();
+  await gaiaSlider.press('End');
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.gaiaYearOffset === '10000');
+  check('Gaia slider End reaches +10,000 and disables only the upper step', await gaiaSlider.inputValue() === '10000' && page.url().includes('gaiaTime=10000') && await page.getByRole('button', { name: 'Next 1,000 years' }).isDisabled() && await page.getByRole('button', { name: 'Previous 1,000 years' }).isEnabled());
+  await gaiaSlider.press('Home');
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.gaiaYearOffset === '-10000');
+  check('Gaia slider Home reaches −10,000 and disables only the lower step', await gaiaSlider.inputValue() === '-10000' && page.url().includes('gaiaTime=-10000') && await page.getByRole('button', { name: 'Previous 1,000 years' }).isDisabled() && await page.getByRole('button', { name: 'Next 1,000 years' }).isEnabled());
+  await gaiaSlider.press('ArrowRight');
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.gaiaYearOffset === '-9999');
+  check('Gaia slider supports exact integer years without recreating or moving the scene', page.url().includes('gaiaTime=-9999') && await page.evaluate((before) => {
+    const camera = window.__OTHER_WORLDS__.camera;
+    return window.__gaiaValidationCanvas === document.querySelector('.scene-canvas canvas') && Object.keys(before.camera).every((key) => Math.abs(camera[key] - before.camera[key]) < 0.000001) && document.querySelector('.scene-canvas')?.dataset.nasaHostPositions === before.nasa;
+  }, gaiaAfterReload));
+  await page.getByRole('button', { name: 'Reset to Gaia J2016.0' }).click();
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.gaiaYearOffset === '0');
+  check('Gaia reset restores the reference epoch and removes URL time state', await page.getByRole('button', { name: 'Reset to Gaia J2016.0' }).isDisabled() && !page.url().includes('gaiaTime='));
   await page.mouse.click(gaiaClickTarget.x, gaiaClickTarget.y);
   await page.waitForTimeout(200);
   check('WebGL picking opens the exact Gaia source inspector', await page.locator('.gaia-inspector').isVisible() && await page.locator('.gaia-inspector').getByText(`Gaia DR3 ${gaiaClickTarget.sourceId}`, { exact: true }).isVisible(), gaiaClickTarget);
   if (await page.locator('.gaia-inspector').isVisible()) await page.getByRole('button', { name: 'Close Gaia source inspector' }).click();
+  await page.getByRole('button', { name: 'Next 1,000 years' }).click();
+  await page.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.gaiaYearOffset === '1000');
   await page.getByText('Catalogue & distance method', { exact: true }).click();
   const gaiaSelector = page.getByLabel('Inspect by Gaia source ID');
   check('Gaia audit exposes all 384 exact string source IDs plus an empty choice', await gaiaSelector.locator('option').count() === 385);
+  check('Gaia method links the direct astrometry field definitions and discloses motion limits', await page.getByRole('link', { name: 'Astrometry field definitions' }).getAttribute('href') === gaia.source.astrometryDocumentation && await page.getByText(/Radial velocity is zero only as an explicit model assumption/).isVisible() && await page.getByText(/not a Gaia crossmatch/).isVisible());
   const desktopGaiaMethodGeometry = await page.evaluate(() => {
     const panel = document.querySelector('.gaia-method > div').getBoundingClientRect();
     const course = document.querySelector('.neighbourhood-copy .primary-button').getBoundingClientRect();
-    return { panelTop: panel.top, panelBottom: panel.bottom, panelLeft: panel.left, panelRight: panel.right, courseRight: course.right, viewportWidth: innerWidth, viewportHeight: innerHeight };
+    const time = document.querySelector('.gaia-time').getBoundingClientRect();
+    return { panelTop: panel.top, panelBottom: panel.bottom, panelLeft: panel.left, panelRight: panel.right, courseRight: course.right, timeTop: time.top, viewportWidth: innerWidth, viewportHeight: innerHeight };
   });
-  check('desktop Gaia method stays inside the viewport and clears the course action', desktopGaiaMethodGeometry.panelTop >= 0 && desktopGaiaMethodGeometry.panelBottom <= desktopGaiaMethodGeometry.viewportHeight && desktopGaiaMethodGeometry.panelRight <= desktopGaiaMethodGeometry.viewportWidth && desktopGaiaMethodGeometry.panelLeft >= desktopGaiaMethodGeometry.courseRight, desktopGaiaMethodGeometry);
+  check('desktop Gaia method stays bounded and clears the course action and time instrument', desktopGaiaMethodGeometry.panelTop >= 0 && desktopGaiaMethodGeometry.panelBottom <= desktopGaiaMethodGeometry.viewportHeight && desktopGaiaMethodGeometry.panelBottom <= desktopGaiaMethodGeometry.timeTop && desktopGaiaMethodGeometry.panelRight <= desktopGaiaMethodGeometry.viewportWidth && desktopGaiaMethodGeometry.panelLeft >= desktopGaiaMethodGeometry.courseRight, desktopGaiaMethodGeometry);
   await shot(page, 'desktop-gaia-method');
-  await gaiaSelector.selectOption('4472832130942575872');
-  check('source-ID inspection retains published geometric distance and parallax uncertainty', await page.locator('.gaia-inspector').isVisible() && await page.locator('.gaia-inspector').getByText('Gaia DR3 4472832130942575872', { exact: true }).isVisible() && await page.locator('.gaia-inspector').getByText('546.976 ± 0.040 mas', { exact: true }).isVisible() && await page.locator('.gaia-inspector').getByText('1.8280–1.8282', { exact: true }).isVisible());
+  await gaiaSelector.selectOption(BARNARD_SOURCE_ID);
+  const barnardInspectorText = await page.locator('.gaia-inspector').textContent();
+  check('selected-time source inspection retains published distance and measurement uncertainties', await page.locator('.gaia-inspector').isVisible() && barnardInspectorText?.includes(`Gaia DR3 ${BARNARD_SOURCE_ID}`) && barnardInspectorText.includes('546.976 ± 0.040 mas') && barnardInspectorText.includes('1.8280–1.8282') && barnardInspectorText.includes('-801.551 ± 0.032') && barnardInspectorText.includes('10362.394 ± 0.036'));
+  check('selected-time inspector distinguishes derived RA/Dec from J2016.0 distance and discloses model limits', barnardInspectorText?.includes(`${barnardAt1000.ra.toFixed(6)}° / ${barnardAt1000.dec.toFixed(6)}°`) && barnardInspectorText.includes('J2016.0 distance') && barnardInspectorText.includes('zero by assumption') && barnardInspectorText.includes('no full-covariance propagation') && barnardInspectorText.includes('Display radius remains fixed'));
   check('source selection closes the method panel without losing the inspector', !await page.locator('.gaia-method').evaluate((element) => element.open) && await page.locator('.gaia-inspector').isVisible());
+  const desktopGaiaInspectorGeometry = await page.evaluate(() => {
+    const inspector = document.querySelector('.gaia-inspector').getBoundingClientRect();
+    const time = document.querySelector('.gaia-time').getBoundingClientRect();
+    return { inspectorBottom: inspector.bottom, timeTop: time.top, timeVisible: getComputedStyle(document.querySelector('.gaia-time')).display !== 'none' };
+  });
+  check('desktop selected-time inspector and time instrument remain visible without overlap', desktopGaiaInspectorGeometry.timeVisible && desktopGaiaInspectorGeometry.inspectorBottom <= desktopGaiaInspectorGeometry.timeTop, desktopGaiaInspectorGeometry);
   await shot(page, 'desktop-gaia-source');
   await page.getByRole('button', { name: 'Close Gaia source inspector' }).click();
+  await page.getByRole('button', { name: 'Reset to Gaia J2016.0' }).click();
   performance.neighbourhood = await page.evaluate(() => ({ ...window.__OTHER_WORLDS__ }));
 
   await page.getByRole('button', { name: 'Plot course for TRAPPIST-1' }).click();
@@ -534,21 +591,43 @@ try {
   await phone.getByRole('button', { name: 'Travel to nearby suns' }).click();
   await ready(phone, 'neighbourhood');
   await noOverflow(phone, 'mobile Gaia neighbourhood');
-  check('mobile Gaia neighbourhood keeps its journey and catalogue controls visible', await phone.getByRole('button', { name: 'Plot course for TRAPPIST-1' }).isVisible() && await phone.getByText('Catalogue & distance method', { exact: true }).isVisible());
+  check('mobile Gaia neighbourhood keeps journey, catalogue, and selected-time controls visible', await phone.getByRole('button', { name: 'Plot course for TRAPPIST-1' }).isVisible() && await phone.getByText('Catalogue & distance method', { exact: true }).isVisible() && await phone.locator('.gaia-time').isVisible());
+  const mobileGaiaTimeGeometry = await phone.evaluate(() => {
+    const box = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, width: rect.width, height: rect.height };
+    };
+    return {
+      panel: box('.gaia-time'),
+      course: box('.neighbourhood-copy .primary-button'),
+      disclosure: box('.view-neighbourhood .expedition-disclosure'),
+      controls: [...document.querySelectorAll('.gaia-time-actions button, .gaia-time-slider input')].map((element) => box(`.gaia-time ${element.tagName === 'INPUT' ? 'input' : `button[aria-label="${element.getAttribute('aria-label')}"]`}`)),
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+    };
+  });
+  check('mobile Gaia time instrument clears journey and disclosure with 44px touch targets', mobileGaiaTimeGeometry.panel.top >= mobileGaiaTimeGeometry.course.bottom && mobileGaiaTimeGeometry.panel.bottom <= mobileGaiaTimeGeometry.disclosure.top && mobileGaiaTimeGeometry.panel.left >= 0 && mobileGaiaTimeGeometry.panel.right <= mobileGaiaTimeGeometry.viewportWidth && mobileGaiaTimeGeometry.controls.every((control) => control.width >= 44 && control.height >= 44 && control.top >= mobileGaiaTimeGeometry.panel.top && control.bottom <= mobileGaiaTimeGeometry.panel.bottom), mobileGaiaTimeGeometry);
   await shot(phone, 'mobile-neighbourhood');
+  await phone.getByRole('button', { name: 'Next 1,000 years' }).click();
+  await phone.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.gaiaYearOffset === '1000');
+  check('mobile Gaia step preserves exact state and independently derived Barnard geometry', phone.url().includes('gaiaTime=1000') && await phone.locator('.gaia-time output').textContent() === 'J2016.0 + 1,000 Julian years · TCB' && await phone.evaluate((expected) => Math.abs(Number(document.querySelector('.scene-canvas')?.dataset.gaiaBarnardRaDeg) - expected.ra) < 1e-10 && Math.abs(Number(document.querySelector('.scene-canvas')?.dataset.gaiaBarnardDecDeg) - expected.dec) < 1e-10, barnardAt1000));
+  await shot(phone, 'mobile-gaia-selected-time');
   await phone.getByText('Catalogue & distance method', { exact: true }).click();
+  await phone.waitForFunction(() => getComputedStyle(document.querySelector('.gaia-time')).display === 'none');
   const mobileGaiaMethodGeometry = await phone.evaluate(() => {
     const panel = document.querySelector('.gaia-method > div').getBoundingClientRect();
     const course = document.querySelector('.neighbourhood-copy .primary-button').getBoundingClientRect();
-    return { panelTop: panel.top, panelBottom: panel.bottom, panelLeft: panel.left, panelRight: panel.right, courseBottom: course.bottom, viewportWidth: innerWidth, viewportHeight: innerHeight };
+    return { panelTop: panel.top, panelBottom: panel.bottom, panelLeft: panel.left, panelRight: panel.right, courseBottom: course.bottom, timeDisplay: getComputedStyle(document.querySelector('.gaia-time')).display, viewportWidth: innerWidth, viewportHeight: innerHeight };
   });
-  check('mobile Gaia method clears the course action and stays inside the viewport', mobileGaiaMethodGeometry.panelTop >= mobileGaiaMethodGeometry.courseBottom && mobileGaiaMethodGeometry.panelBottom <= mobileGaiaMethodGeometry.viewportHeight && mobileGaiaMethodGeometry.panelLeft >= 0 && mobileGaiaMethodGeometry.panelRight <= mobileGaiaMethodGeometry.viewportWidth, mobileGaiaMethodGeometry);
+  check('mobile Gaia method clears the course, stays bounded, and suppresses the time instrument', mobileGaiaMethodGeometry.panelTop >= mobileGaiaMethodGeometry.courseBottom && mobileGaiaMethodGeometry.panelBottom <= mobileGaiaMethodGeometry.viewportHeight && mobileGaiaMethodGeometry.panelLeft >= 0 && mobileGaiaMethodGeometry.panelRight <= mobileGaiaMethodGeometry.viewportWidth && mobileGaiaMethodGeometry.timeDisplay === 'none', mobileGaiaMethodGeometry);
   await shot(phone, 'mobile-gaia-method');
   await phone.getByRole('button', { name: 'Close catalogue and distance method' }).click();
-  check('mobile Gaia method has a working explicit dismissal', !await phone.locator('.gaia-method').evaluate((element) => element.open));
+  await phone.waitForFunction(() => getComputedStyle(document.querySelector('.gaia-time')).display !== 'none');
+  check('mobile Gaia method dismissal restores the time instrument', !await phone.locator('.gaia-method').evaluate((element) => element.open) && await phone.locator('.gaia-time').isVisible());
   await phone.getByText('Catalogue & distance method', { exact: true }).click();
-  await phone.getByLabel('Inspect by Gaia source ID').selectOption('4472832130942575872');
-  check('mobile source selection opens a bounded readable inspector', await phone.locator('.gaia-inspector').isVisible() && await phone.locator('.gaia-inspector').evaluate((element) => { const box = element.getBoundingClientRect(); return box.top >= 0 && box.bottom <= window.innerHeight && box.left >= 0 && box.right <= window.innerWidth; }));
+  await phone.getByLabel('Inspect by Gaia source ID').selectOption(BARNARD_SOURCE_ID);
+  await phone.waitForFunction(() => getComputedStyle(document.querySelector('.gaia-time')).display === 'none');
+  check('mobile source selection opens a bounded inspector and suppresses the time instrument and covered secondary action', await phone.locator('.gaia-inspector').isVisible() && !await phone.locator('.gaia-time').isVisible() && !await phone.getByRole('button', { name: 'Open the full exoplanet atlas' }).isVisible() && await phone.locator('.gaia-inspector').evaluate((element) => { const box = element.getBoundingClientRect(); return box.top >= 0 && box.bottom <= window.innerHeight && box.left >= 0 && box.right <= window.innerWidth && element.scrollHeight >= element.clientHeight; }));
   const mobileGaiaGeometry = await phone.evaluate(() => {
     const inspector = document.querySelector('.gaia-inspector').getBoundingClientRect();
     const course = document.querySelector('.neighbourhood-copy .primary-button').getBoundingClientRect();
@@ -557,6 +636,7 @@ try {
   check('mobile Gaia inspector does not cover the primary course action', mobileGaiaGeometry.inspectorTop >= mobileGaiaGeometry.courseBottom, mobileGaiaGeometry);
   await shot(phone, 'mobile-gaia-source');
   await phone.getByRole('button', { name: 'Close Gaia source inspector' }).click();
+  check('closing mobile Gaia inspection restores the secondary action and time instrument', await phone.getByRole('button', { name: 'Open the full exoplanet atlas' }).isVisible() && await phone.locator('.gaia-time').isVisible());
   await phone.goto(base, { waitUntil: 'networkidle' });
   await ready(phone, 'earth');
   await phone.getByRole('button', { name: 'Explore the exoplanet atlas' }).click();
@@ -645,7 +725,10 @@ try {
   await quiet.getByRole('button', { name: 'Travel to nearby suns' }).click();
   await ready(quiet, 'neighbourhood');
   await noOverflow(quiet, 'reduced-motion Gaia neighbourhood');
-  check('reduced-motion retains the complete Gaia scene and source audit', await quiet.locator('.gaia-method').isVisible() && await quiet.getByRole('button', { name: 'Plot course for TRAPPIST-1' }).isVisible());
+  check('reduced-motion retains the complete Gaia scene, source audit, and manual time controls', await quiet.locator('.gaia-method').isVisible() && await quiet.getByRole('button', { name: 'Plot course for TRAPPIST-1' }).isVisible() && await quiet.locator('.gaia-time').isVisible() && await quiet.getByRole('button', { name: /Play/ }).count() === 0);
+  await quiet.getByRole('button', { name: 'Next 1,000 years' }).click();
+  await quiet.waitForFunction(() => document.querySelector('.scene-canvas')?.dataset.gaiaYearOffset === '1000');
+  check('reduced-motion Gaia retains explicit stepping without CSS animation', quiet.url().includes('gaiaTime=1000') && await quiet.locator('.gaia-time output').textContent() === 'J2016.0 + 1,000 Julian years · TCB' && await quiet.locator('.gaia-time').evaluate((element) => getComputedStyle(element).animationName === 'none'));
   await shot(quiet, 'desktop-neighbourhood-reduced-motion');
   await quiet.goto(`${base}/?planet=HD+189733+b&view=planet&az=0&el=0.08`, { waitUntil: 'networkidle' });
   await ready(quiet, 'planet');
@@ -713,12 +796,26 @@ try {
   await shot(fallbackPage, 'desktop-static-solar');
   await fallbackPage.getByRole('button', { name: 'Travel to nearby suns' }).click();
   await fallbackPage.locator('.static-neighbourhood').waitFor();
-  check('no-WebGL Gaia fallback renders all 384 traceable sources', await fallbackPage.locator('.static-neighbourhood .gaia-star').count() === 384 && await fallbackPage.locator('.static-neighbourhood .gaia-star title').first().evaluate((element) => /^Gaia DR3 \d+:/.test(element.textContent ?? '')));
+  check('no-WebGL Gaia fallback renders all 384 traceable sources', await fallbackPage.locator('.static-neighbourhood .gaia-star').count() === 384 && await fallbackPage.locator('.static-neighbourhood [data-gaia-source]').count() === 384 && await fallbackPage.locator('.static-neighbourhood .gaia-star title').first().evaluate((element) => /^Gaia DR3 \d+:/.test(element.textContent ?? '')));
+  const staticBarnard = fallbackPage.locator(`.static-neighbourhood [data-gaia-source="${BARNARD_SOURCE_ID}"]`);
+  const staticBarnardBefore = await staticBarnard.getAttribute('data-display-position');
+  const staticNasaBefore = await fallbackPage.locator('.static-neighbourhood .nasa-exoplanet-host').evaluateAll((elements) => elements.map((element) => `${element.getAttribute('cx')},${element.getAttribute('cy')}`).join('|'));
   await noOverflow(fallbackPage, 'no-WebGL Gaia neighbourhood');
   await shot(fallbackPage, 'desktop-static-neighbourhood');
+  await fallbackPage.getByRole('button', { name: 'Next 1,000 years' }).click();
+  await fallbackPage.waitForFunction(({ before, sourceId }) => document.querySelector(`[data-gaia-source="${sourceId}"]`)?.getAttribute('data-display-position') !== before, { before: staticBarnardBefore, sourceId: BARNARD_SOURCE_ID });
+  check('no-WebGL Gaia step changes actual SVG geometry and exact state with an honest still label', fallbackPage.url().includes('gaiaTime=1000') && await staticBarnard.getAttribute('data-display-position') !== staticBarnardBefore && (await fallbackPage.locator('.static-neighbourhood svg').getAttribute('aria-label'))?.includes('J2016.0 + 1,000 Julian years · TCB') && await fallbackPage.locator('.gaia-time').getByText(/Still reconstruction · same derived directions/).isVisible());
+  check('no-WebGL Barnard SVG coordinates match independent selected-time math and fixed display radius', await staticBarnard.evaluate((element, expected) => {
+    const display = element.getAttribute('data-display-position')?.split(',').map(Number) ?? [];
+    return Math.abs(Number(element.getAttribute('data-ra-deg')) - expected.ra) < 1e-12 && Math.abs(Number(element.getAttribute('data-dec-deg')) - expected.dec) < 1e-12 && display.every((value, index) => Math.abs(value - expected.displayPosition[index]) < 1e-12) && Math.abs(Math.hypot(...display) - expected.displayRadius) < 1e-12 && Number(element.getAttribute('cx')) === display[0] && Number(element.getAttribute('cy')) === display[2];
+  }, barnardAt1000));
+  check('no-WebGL Gaia selected time leaves every independent NASA host coordinate unchanged', await fallbackPage.locator('.static-neighbourhood .nasa-exoplanet-host').evaluateAll((elements) => elements.map((element) => `${element.getAttribute('cx')},${element.getAttribute('cy')}`).join('|')) === staticNasaBefore);
+  await shot(fallbackPage, 'desktop-static-gaia-selected-time');
   await fallbackPage.getByText('Catalogue & distance method', { exact: true }).click();
-  await fallbackPage.getByLabel('Inspect by Gaia source ID').selectOption('4472832130942575872');
-  check('no-WebGL source selector retains the scientific inspector', await fallbackPage.locator('.gaia-inspector').getByText('Gaia DR3 4472832130942575872', { exact: true }).isVisible());
+  await fallbackPage.getByLabel('Inspect by Gaia source ID').selectOption(BARNARD_SOURCE_ID);
+  const staticInspectorText = await fallbackPage.locator('.gaia-inspector').textContent();
+  check('no-WebGL source selector retains published distance and selected-time derived direction', staticInspectorText?.includes(`Gaia DR3 ${BARNARD_SOURCE_ID}`) && staticInspectorText.includes('J2016.0 distance') && staticInspectorText.includes(`${barnardAt1000.ra.toFixed(6)}° / ${barnardAt1000.dec.toFixed(6)}°`));
+  await shot(fallbackPage, 'desktop-static-gaia-source');
   await fallbackPage.getByRole('button', { name: 'Close Gaia source inspector' }).click();
   await fallbackPage.goto(`${base}/?planet=TRAPPIST-1+e&view=planet&az=0&el=0.08`, { waitUntil: 'networkidle' });
   await fallbackPage.locator('.static-planet').waitFor();

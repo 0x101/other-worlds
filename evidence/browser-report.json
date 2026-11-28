@@ -1,5 +1,5 @@
 {
-  "validatedAt": "2026-11-27T23:00:09.148Z",
+  "validatedAt": "2026-11-28T05:54:58.866Z",
   "mode": "preview",
   "baseUrl": "http://127.0.0.1:7100",
   "checks": [
@@ -163,9 +163,9 @@
       "pass": true,
       "details": {
         "before": {
-          "x": -8.650450142977325,
-          "y": 38.55296224662774,
-          "z": 41.3622873440765,
+          "x": -8.650450142975867,
+          "y": 38.55296224662704,
+          "z": 41.36228734407745,
           "targetX": 0,
           "targetY": 0,
           "targetZ": 0
@@ -196,7 +196,12 @@
       "details": null
     },
     {
-      "name": "Gaia neighbourhood discloses ICRS epoch, posterior distances, compression, and incompleteness",
+      "name": "Gaia neighbourhood discloses measured reference astrometry, derived time, fixed display radius, and incompleteness",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Gaia selected time starts at J2016.0 with no playback or redundant URL state",
       "pass": true,
       "details": null
     },
@@ -209,6 +214,63 @@
         "height": 960,
         "scrollHeight": 960
       }
+    },
+    {
+      "name": "Gaia thousand-year step updates the exact URL and readout",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Gaia time preserves canvas, camera, controls, and the independent NASA host geometry",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "WebGL Barnard probe matches independent selected-time RA/Dec and actual Float32 display coordinates",
+      "pass": true,
+      "details": {
+        "expected": {
+          "ra": 269.22415225477783,
+          "dec": 7.615387229063911,
+          "positionPc": [
+            -0.024566609725824813,
+            0.2425727437850471,
+            -1.8141149870897937
+          ],
+          "distancePc": 1.8304256993182295,
+          "displayRadius": 10.869444679928385,
+          "displayPosition": [
+            -0.145881586719254,
+            1.4404468973594862,
+            -10.772588312405109
+          ]
+        }
+      }
+    },
+    {
+      "name": "Gaia exact-link reload restores the selected integer offset and derived geometry",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Gaia slider End reaches +10,000 and disables only the upper step",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Gaia slider Home reaches −10,000 and disables only the lower step",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Gaia slider supports exact integer years without recreating or moving the scene",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "Gaia reset restores the reference epoch and removes URL time state",
+      "pass": true,
+      "details": null
     },
     {
       "name": "WebGL picking opens the exact Gaia source inspector",
@@ -226,20 +288,31 @@
       "details": null
     },
     {
-      "name": "desktop Gaia method stays inside the viewport and clears the course action",
+      "name": "Gaia method links the direct astrometry field definitions and discloses motion limits",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "desktop Gaia method stays bounded and clears the course action and time instrument",
       "pass": true,
       "details": {
-        "panelTop": 620,
-        "panelBottom": 872,
+        "panelTop": 296,
+        "panelBottom": 654,
         "panelLeft": 965.375,
         "panelRight": 1395.375,
         "courseRight": 280.890625,
+        "timeTop": 664.625,
         "viewportWidth": 1440,
         "viewportHeight": 960
       }
     },
     {
-      "name": "source-ID inspection retains published geometric distance and parallax uncertainty",
+      "name": "selected-time source inspection retains published distance and measurement uncertainties",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "selected-time inspector distinguishes derived RA/Dec from J2016.0 distance and discloses model limits",
       "pass": true,
       "details": null
     },
@@ -247,6 +320,15 @@
       "name": "source selection closes the method panel without losing the inspector",
       "pass": true,
       "details": null
+    },
+    {
+      "name": "desktop selected-time inspector and time instrument remain visible without overlap",
+      "pass": true,
+      "details": {
+        "inspectorBottom": 654,
+        "timeTop": 664.625,
+        "timeVisible": true
+      }
     },
     {
       "name": "golden path arrives at the real TRAPPIST-1 system",
@@ -773,30 +855,102 @@
       }
     },
     {
-      "name": "mobile Gaia neighbourhood keeps its journey and catalogue controls visible",
+      "name": "mobile Gaia neighbourhood keeps journey, catalogue, and selected-time controls visible",
       "pass": true,
       "details": null
     },
     {
-      "name": "mobile Gaia method clears the course action and stays inside the viewport",
+      "name": "mobile Gaia time instrument clears journey and disclosure with 44px touch targets",
       "pass": true,
       "details": {
-        "panelTop": 456,
-        "panelBottom": 724,
-        "panelLeft": 16,
-        "panelRight": 359,
-        "courseBottom": 409.125,
+        "panel": {
+          "top": 529.125,
+          "bottom": 700,
+          "left": 16,
+          "right": 359,
+          "width": 343,
+          "height": 170.875
+        },
+        "course": {
+          "top": 357.125,
+          "bottom": 409.125,
+          "left": 22,
+          "right": 353,
+          "width": 331,
+          "height": 52
+        },
+        "disclosure": {
+          "top": 724.40625,
+          "bottom": 750,
+          "left": 22,
+          "right": 353,
+          "width": 331,
+          "height": 25.59375
+        },
+        "controls": [
+          {
+            "top": 559.515625,
+            "bottom": 603.515625,
+            "left": 29,
+            "right": 73,
+            "width": 44,
+            "height": 44
+          },
+          {
+            "top": 559.515625,
+            "bottom": 603.515625,
+            "left": 79,
+            "right": 123,
+            "width": 44,
+            "height": 44
+          },
+          {
+            "top": 559.515625,
+            "bottom": 603.515625,
+            "left": 245.3125,
+            "right": 346,
+            "width": 100.6875,
+            "height": 44
+          },
+          {
+            "top": 624.3125,
+            "bottom": 668.3125,
+            "left": 29,
+            "right": 346,
+            "width": 317,
+            "height": 44
+          }
+        ],
         "viewportWidth": 375,
         "viewportHeight": 812
       }
     },
     {
-      "name": "mobile Gaia method has a working explicit dismissal",
+      "name": "mobile Gaia step preserves exact state and independently derived Barnard geometry",
       "pass": true,
       "details": null
     },
     {
-      "name": "mobile source selection opens a bounded readable inspector",
+      "name": "mobile Gaia method clears the course, stays bounded, and suppresses the time instrument",
+      "pass": true,
+      "details": {
+        "panelTop": 462.71875,
+        "panelBottom": 724,
+        "panelLeft": 16,
+        "panelRight": 359,
+        "courseBottom": 427.125,
+        "timeDisplay": "none",
+        "viewportWidth": 375,
+        "viewportHeight": 812
+      }
+    },
+    {
+      "name": "mobile Gaia method dismissal restores the time instrument",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "mobile source selection opens a bounded inspector and suppresses the time instrument and covered secondary action",
       "pass": true,
       "details": null
     },
@@ -804,9 +958,14 @@
       "name": "mobile Gaia inspector does not cover the primary course action",
       "pass": true,
       "details": {
-        "inspectorTop": 429.953125,
-        "courseBottom": 409.125
+        "inspectorTop": 454.71875,
+        "courseBottom": 427.125
       }
+    },
+    {
+      "name": "closing mobile Gaia inspection restores the secondary action and time instrument",
+      "pass": true,
+      "details": null
     },
     {
       "name": "mobile atlas: no page overflow",
@@ -994,7 +1153,12 @@
       }
     },
     {
-      "name": "reduced-motion retains the complete Gaia scene and source audit",
+      "name": "reduced-motion retains the complete Gaia scene, source audit, and manual time controls",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "reduced-motion Gaia retains explicit stepping without CSS animation",
       "pass": true,
       "details": null
     },
@@ -1091,7 +1255,22 @@
       }
     },
     {
-      "name": "no-WebGL source selector retains the scientific inspector",
+      "name": "no-WebGL Gaia step changes actual SVG geometry and exact state with an honest still label",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no-WebGL Barnard SVG coordinates match independent selected-time math and fixed display radius",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no-WebGL Gaia selected time leaves every independent NASA host coordinate unchanged",
+      "pass": true,
+      "details": null
+    },
+    {
+      "name": "no-WebGL source selector retains published distance and selected-time derived direction",
       "pass": true,
       "details": null
     },
@@ -1156,7 +1335,7 @@
       "ready": true,
       "view": "earth",
       "planet": null,
-      "fps": 24,
+      "fps": 34,
       "drawCalls": 2,
       "triangles": 20896,
       "systems": 4865,
@@ -1164,6 +1343,7 @@
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
       "moonEpoch": null,
+      "gaiaYearOffset": 0,
       "camera": {
         "x": 0,
         "y": 0.4492529737540238,
@@ -1174,13 +1354,13 @@
       },
       "transitioning": false,
       "resources": 12,
-      "transferBytes": 2318762
+      "transferBytes": 2321737
     },
     "iss": {
       "ready": true,
       "view": "earth",
       "planet": null,
-      "fps": 37,
+      "fps": 42,
       "drawCalls": 5,
       "triangles": 22056,
       "systems": 4865,
@@ -1188,6 +1368,7 @@
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": "2026-11-27T09:39:25.185Z",
       "moonEpoch": null,
+      "gaiaYearOffset": 0,
       "camera": {
         "x": 0,
         "y": 0.4492529737540238,
@@ -1202,7 +1383,7 @@
       "ready": true,
       "view": "earth",
       "planet": null,
-      "fps": 25,
+      "fps": 42,
       "drawCalls": 5,
       "triangles": 22728,
       "systems": 4865,
@@ -1210,6 +1391,7 @@
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
       "moonEpoch": "2026-12-18T03:00:00.000Z",
+      "gaiaYearOffset": 0,
       "camera": {
         "x": 0,
         "y": 0.4492529737540238,
@@ -1224,7 +1406,7 @@
       "ready": true,
       "view": "solar",
       "planet": null,
-      "fps": 45,
+      "fps": 57,
       "drawCalls": 19,
       "triangles": 14754,
       "systems": 4865,
@@ -1232,6 +1414,7 @@
       "solarEpoch": "2027-01-03T00:00:00.000Z",
       "issEpoch": null,
       "moonEpoch": null,
+      "gaiaYearOffset": 0,
       "camera": {
         "x": -8.650450142977336,
         "y": 38.55296224662774,
@@ -1254,8 +1437,9 @@
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
       "moonEpoch": null,
+      "gaiaYearOffset": 1000,
       "camera": {
-        "x": -7.388311224025913e-20,
+        "x": 0,
         "y": 7.000000000000002,
         "z": 43.999999999999986,
         "targetX": 0,
@@ -1268,7 +1452,7 @@
       "ready": true,
       "view": "lookback",
       "planet": "TRAPPIST-1 e",
-      "fps": 59,
+      "fps": 60,
       "drawCalls": 3,
       "triangles": 722,
       "systems": 4865,
@@ -1276,6 +1460,7 @@
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
       "moonEpoch": null,
+      "gaiaYearOffset": 0,
       "camera": {
         "x": 40.70286419357998,
         "y": -3.692278068855854,
@@ -1290,7 +1475,7 @@
       "ready": true,
       "view": "atlas",
       "planet": null,
-      "fps": 59,
+      "fps": 60,
       "drawCalls": 6,
       "triangles": 2,
       "systems": 4865,
@@ -1298,10 +1483,11 @@
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
       "moonEpoch": null,
+      "gaiaYearOffset": 0,
       "camera": {
-        "x": -0.43867013534349825,
+        "x": -0.4577370143272756,
         "y": 1.036737631740055,
-        "z": 17.964763944880872,
+        "z": 17.964288238297915,
         "targetX": 0,
         "targetY": 0,
         "targetZ": 0
@@ -1314,7 +1500,7 @@
       "ready": true,
       "view": "planet",
       "planet": "TRAPPIST-1 e",
-      "fps": 22,
+      "fps": 26,
       "drawCalls": 4,
       "triangles": 26498,
       "systems": 4865,
@@ -1322,10 +1508,11 @@
       "solarEpoch": "2026-11-26T00:00:00.000Z",
       "issEpoch": null,
       "moonEpoch": null,
+      "gaiaYearOffset": 0,
       "camera": {
-        "x": -7.172243606752919e-7,
-        "y": 0.4499999999999998,
-        "z": 7.123008113139315,
+        "x": -4.1124971129607845e-7,
+        "y": 0.4499999999999999,
+        "z": 7.123008113139342,
         "targetX": 0,
         "targetY": 0,
         "targetZ": 0
@@ -1344,6 +1531,7 @@
     "desktop-earth.png",
     "desktop-evidence.png",
     "desktop-gaia-method.png",
+    "desktop-gaia-selected-time.png",
     "desktop-gaia-source.png",
     "desktop-gas-giant-reduced-motion.png",
     "desktop-journeys.png",
@@ -1362,6 +1550,8 @@
     "desktop-static-earth-moon.png",
     "desktop-static-earth.png",
     "desktop-static-fallback.png",
+    "desktop-static-gaia-selected-time.png",
+    "desktop-static-gaia-source.png",
     "desktop-static-neighbourhood.png",
     "desktop-static-share.png",
     "desktop-static-solar.png",
@@ -1372,6 +1562,7 @@
     "mobile-earth.png",
     "mobile-evidence.png",
     "mobile-gaia-method.png",
+    "mobile-gaia-selected-time.png",
     "mobile-gaia-source.png",
     "mobile-neighbourhood.png",
     "mobile-planet.png",

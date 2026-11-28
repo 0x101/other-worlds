@@ -106,4 +106,16 @@ import { DEFAULT_JOURNEY, journeySearch, parseJourney } from './urlState';
     expect(parseJourney('?iss=2026-11-27T09%3A39%3A25.185Z&moon=2026-12-18T03%3A00%3A00.000Z')).toMatchObject({ issEpoch: '2026-11-27T09:39:25.185Z', moonEpoch: null });
     expect(journeySearch({ ...selected, issEpoch: '2026-11-27T09:39:25.185Z' })).toBe('?iss=2026-11-27T09%3A39%3A25.185Z');
   });
+
+  it('round-trips Gaia selected Julian-year offsets only in the neighbourhood', () => {
+    const selected = { ...DEFAULT_JOURNEY, view: 'neighbourhood' as const, gaiaYearOffset: -2500 };
+    expect(journeySearch(selected)).toBe('?view=neighbourhood&gaiaTime=-2500');
+    expect(parseJourney(journeySearch(selected))).toEqual(selected);
+    expect(parseJourney('?view=neighbourhood&gaiaTime=1000').gaiaYearOffset).toBe(1000);
+    for (const invalid of ['invalid', '1.5', '+1000', '10001']) expect(parseJourney(`?view=neighbourhood&gaiaTime=${invalid}`).gaiaYearOffset).toBe(0);
+    expect(parseJourney('?view=neighbourhood&gaiaTime=invalid')).toEqual({ ...DEFAULT_JOURNEY, view: 'neighbourhood' });
+    expect(parseJourney('?view=solar&gaiaTime=1000').gaiaYearOffset).toBe(0);
+    expect(journeySearch({ ...selected, view: 'solar' })).toBe('?view=solar');
+    expect(journeySearch({ ...selected, gaiaYearOffset: 0 })).toBe('?view=neighbourhood');
+  });
 });

@@ -5,7 +5,7 @@ import type { CameraViewState, Catalogue, PlanetRow, ViewName } from '../types';
 import { displayOrbit, generateWorld, seededRandom } from '../lib/world';
 import { hashString, skyPosition } from '../lib/catalogue';
 import { hostColor, lookBackGeometry, nearbyHosts, solarDisplayBodies } from '../lib/goldenPath';
-import { GAIA_NEIGHBOURHOOD, gaiaDisplayColour, gaiaDisplayPosition, type GaiaStar } from '../lib/gaia';
+import { GAIA_BY_ID, GAIA_NEIGHBOURHOOD, gaiaDisplayColour, gaiaStateAt, type GaiaStar } from '../lib/gaia';
 import { issStateAt, issTraceAt } from '../lib/iss';
 import { moonStateAt, moonTraceAt } from '../lib/moon';
 
@@ -17,6 +17,7 @@ interface SceneProps {
   solarEpoch: string;
   issEpoch: string | null;
   moonEpoch: string | null;
+  gaiaYearOffset: number;
   reducedMotion: boolean;
   lowPower: boolean;
   onSelect: (planet: PlanetRow) => void;
@@ -235,6 +236,7 @@ class WorldEngine {
   private currentSolarEpoch = '';
   private currentIssEpoch: string | null = null;
   private currentMoonEpoch: string | null = null;
+  private currentGaiaYearOffset = 0;
   private catalogue: Catalogue;
   private callbacks: EngineCallbacks;
   private reducedMotion: boolean;
@@ -538,7 +540,7 @@ class WorldEngine {
     const gaiaPositions = new Float32Array(stars.length * 3);
     const gaiaColors = new Float32Array(stars.length * 3);
     stars.forEach((star, index) => {
-      const position = gaiaDisplayPosition(star);
+      const position = gaiaStateAt(star, this.currentGaiaYearOffset).displayPosition;
       const color = new THREE.Color(gaiaDisplayColour(star.bp_rp));
       gaiaPositions.set([position.x, position.y, position.z], index * 3);
       gaiaColors.set([color.r, color.g, color.b], index * 3);
@@ -546,10 +548,12 @@ class WorldEngine {
     const gaiaGeometry = new THREE.BufferGeometry();
     gaiaGeometry.setAttribute('position', new THREE.BufferAttribute(gaiaPositions, 3));
     gaiaGeometry.setAttribute('color', new THREE.BufferAttribute(gaiaColors, 3));
+    gaiaGeometry.computeBoundingSphere();
     const gaiaPoints = new THREE.Points(gaiaGeometry, new THREE.PointsMaterial({ size: 0.48, map: this.spriteTexture, vertexColors: true, transparent: true, opacity: 0.88, alphaTest: 0.035, depthWrite: false }));
     gaiaPoints.name = 'gaia-dr3-neighbourhood';
     gaiaPoints.userData.gaiaStars = stars;
     this.content.add(gaiaPoints);
+    this.updateGaiaDiagnostics(gaiaPoints);
 
     const hosts = nearbyHosts(this.catalogue);
     const positions = new Float32Array(hosts.length * 3);
@@ -568,9 +572,48 @@ class WorldEngine {
     points.name = 'nasa-exoplanet-hosts';
     points.userData.systems = names;
     this.content.add(points);
+    this.container.dataset.nasaHostPositions = Array.from(positions, (value) => value.toFixed(9)).join(',');
     const home = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.spriteTexture, color: 0xe5c49a, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
     home.scale.setScalar(1.6);
     this.content.add(home);
+  }
+
+  private updateGaiaDiagnostics(points?: THREE.Points): void {
+    const barnard = GAIA_BY_ID.get('4472832130942575872');
+    if (!barnard) return;
+    const state = gaiaStateAt(barnard, this.currentGaiaYearOffset);
+    const index = GAIA_NEIGHBOURHOOD.stars.indexOf(barnard);
+    const attribute = points?.geometry.getAttribute('position');
+    const displayPosition = attribute && index >= 0
+      ? [attribute.getX(index), attribute.getY(index), attribute.getZ(index)]
+      : [state.displayPosition.x, state.displayPosition.y, state.displayPosition.z];
+    this.container.dataset.gaiaYearOffset = String(this.currentGaiaYearOffset);
+    this.container.dataset.gaiaBarnardRaDeg = String(state.ra);
+    this.container.dataset.gaiaBarnardDecDeg = String(state.dec);
+    this.container.dataset.gaiaBarnardDisplay = displayPosition.join(',');
+  }
+
+  setGaiaYearOffset(offset: number): void {
+    this.currentGaiaYearOffset = offset;
+    this.container.dataset.gaiaYearOffset = String(offset);
+    if (this.currentView !== 'neighbourhood') {
+      delete this.container.dataset.gaiaBarnardRaDeg;
+      delete this.container.dataset.gaiaBarnardDecDeg;
+      delete this.container.dataset.gaiaBarnardDisplay;
+      delete this.container.dataset.nasaHostPositions;
+      return;
+    }
+    const points = this.content.getObjectByName('gaia-dr3-neighbourhood');
+    if (points instanceof THREE.Points) {
+      const attribute = points.geometry.getAttribute('position');
+      GAIA_NEIGHBOURHOOD.stars.forEach((star, index) => {
+        const position = gaiaStateAt(star, offset).displayPosition;
+        attribute.setXYZ(index, position.x, position.y, position.z);
+      });
+      attribute.needsUpdate = true;
+      points.geometry.computeBoundingSphere();
+      this.updateGaiaDiagnostics(points);
+    } else this.updateGaiaDiagnostics();
   }
 
   private buildLookback(planet: PlanetRow): void {
@@ -589,7 +632,7 @@ class WorldEngine {
     this.content.add(path);
   }
 
-  setView(view: ViewName, planet: PlanetRow | null, solarEpoch: string, issEpoch: string | null, moonEpoch: string | null): void {
+  setView(view: ViewName, planet: PlanetRow | null, solarEpoch: string, issEpoch: string | null, moonEpoch: string | null, gaiaYearOffset: number): void {
     const instant = this.reducedMotion || !this.ready;
     const previous = this.content;
     this.scene.remove(previous);
@@ -613,6 +656,7 @@ class WorldEngine {
     this.currentPlanet = planet;
     this.currentIssEpoch = view === 'earth' ? issEpoch : null;
     this.currentMoonEpoch = view === 'earth' ? moonEpoch : null;
+    this.setGaiaYearOffset(gaiaYearOffset);
     if (this.currentIssEpoch) this.container.dataset.issEpoch = this.currentIssEpoch;
     else {
       delete this.container.dataset.issEpoch;
@@ -907,6 +951,7 @@ class WorldEngine {
         solarEpoch: this.currentSolarEpoch,
         issEpoch: this.currentIssEpoch,
         moonEpoch: this.currentMoonEpoch,
+        gaiaYearOffset: this.currentGaiaYearOffset,
         camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z, targetX: this.controls.target.x, targetY: this.controls.target.y, targetZ: this.controls.target.z },
         transitioning: this.transition !== null,
       };
@@ -928,6 +973,7 @@ class WorldEngine {
         solarEpoch: this.currentSolarEpoch,
         issEpoch: this.currentIssEpoch,
         moonEpoch: this.currentMoonEpoch,
+        gaiaYearOffset: this.currentGaiaYearOffset,
         camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z, targetX: this.controls.target.x, targetY: this.controls.target.y, targetZ: this.controls.target.z },
         transitioning: this.transition !== null,
       };
@@ -963,7 +1009,7 @@ export default function Scene(props: SceneProps) {
         onCameraChange: (camera) => latest.current.onCameraChange(camera),
         onFailure: () => latest.current.onFailure(),
       }, props.reducedMotion, props.lowPower);
-      engineRef.current.setView(props.view, props.planet, props.solarEpoch, props.issEpoch, props.moonEpoch);
+      engineRef.current.setView(props.view, props.planet, props.solarEpoch, props.issEpoch, props.moonEpoch, props.gaiaYearOffset);
       props.onReady();
     } catch (error) {
       console.warn('WebGL scene unavailable; using static reconstruction.', error);
@@ -978,7 +1024,7 @@ export default function Scene(props: SceneProps) {
   }, []);
 
   useEffect(() => {
-    engineRef.current?.setView(props.view, props.planet, props.solarEpoch, props.issEpoch, props.moonEpoch);
+    engineRef.current?.setView(props.view, props.planet, props.solarEpoch, props.issEpoch, props.moonEpoch, props.gaiaYearOffset);
     if (props.view === 'planet') engineRef.current?.setCamera(props.cameraState);
   }, [props.view, props.planet, props.catalogue]);
 
@@ -993,6 +1039,10 @@ export default function Scene(props: SceneProps) {
   useEffect(() => {
     engineRef.current?.setMoonEpoch(props.moonEpoch);
   }, [props.moonEpoch]);
+
+  useEffect(() => {
+    engineRef.current?.setGaiaYearOffset(props.gaiaYearOffset);
+  }, [props.gaiaYearOffset]);
 
   useEffect(() => {
     engineRef.current?.setCamera(props.cameraState);

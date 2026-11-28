@@ -4,6 +4,7 @@ import path from 'node:path';
 import { Body, GeoMoon, HelioVector, KM_PER_AU, Rotation_EQJ_ECL, RotateVector } from 'astronomy-engine';
 import { json2satrec, propagate } from 'satellite.js';
 import { buildSnapshot } from './fetch-gaia-neighbourhood.mjs';
+import { BARNARD_SOURCE_ID, independentGaiaState } from './gaia-motion-reference.mjs';
 
 const root = process.cwd();
 const read = async (relative) => readFile(path.join(root, relative), 'utf8');
@@ -27,6 +28,24 @@ const expectedGaia = buildSnapshot(gaiaText, gaia.retrievedAt);
 assert(JSON.stringify(gaia) === JSON.stringify(expectedGaia), 'Gaia runtime snapshot does not exactly match its raw CSV, query, and transformations.');
 assert(gaia.rawSha256 === sha256(gaiaText), 'Gaia raw snapshot hash mismatch.');
 assert(await read('gaia-dr3-neighbourhood-query.sql') === `${gaia.query};\n`, 'Gaia query file differs from the manifest.');
+assert(gaia.motionModel.status === 'DERIVED' && gaia.motionModel.timeScale === 'TCB' && gaia.motionModel.offsetUnit === 'Julian year', 'Gaia selected-time semantics changed.');
+assert(gaia.motionModel.minYearOffset === -10000 && gaia.motionModel.maxYearOffset === 10000 && gaia.motionModel.stepYears === 1000, 'Gaia selected-time bounds or step changed.');
+assert(gaia.motionModel.method.includes('mu_alpha_star') && gaia.motionModel.radialVelocityPolicy.includes('never an observed'), 'Gaia tangent-motion or radial-velocity assumption is not explicit.');
+assert(gaia.motionModel.uncertaintyPolicy.includes('No selected-time covariance') && gaia.motionModel.distancePolicy.includes('display radius stays fixed'), 'Gaia uncertainty or fixed-radius policy changed.');
+assert(gaia.source.astrometryDocumentation === 'https://gea.esac.esa.int/archive/documentation/GDR3/Gaia_archive/chap_datamodel/sec_dm_main_source_catalogue/ssec_dm_gaia_source.html', 'Gaia astrometry field documentation changed.');
+assert(gaia.transformations.some((entry) => entry.includes('receives no additional cos(dec)')) && gaia.transformations.some((entry) => entry.includes('NASA host overlay remains')), 'Gaia transformation disclosures are incomplete.');
+assert(gaia.stars.every((star) => star.pmra_error > 0 && star.pmdec_error > 0), 'Gaia proper-motion uncertainties must remain finite and positive.');
+const barnard = gaia.stars.find((star) => star.source_id === BARNARD_SOURCE_ID);
+assert(barnard, 'Barnard’s Star is missing from the exact Gaia slice.');
+const barnardReference = independentGaiaState(barnard, 0);
+const barnardProbe = independentGaiaState(barnard, 1000);
+const referenceUnit = barnardReference.positionPc.map((component) => component / barnardReference.distancePc);
+const probeUnit = barnardProbe.positionPc.map((component) => component / barnardProbe.distancePc);
+const barnardAngularChange = Math.acos(Math.max(-1, Math.min(1, referenceUnit.reduce((sum, component, index) => sum + component * probeUnit[index], 0))));
+const barnardExpectedAngle = Math.atan(Math.hypot(barnard.pmra, barnard.pmdec) * Math.PI / (180 * 3600 * 1000) * 1000);
+assert(Math.abs(barnardAngularChange - barnardExpectedAngle) < 1e-12, 'Independent Barnard +1,000-year tangent-motion probe disagrees with its angular contract.');
+assert(barnardReference.displayRadius === barnardProbe.displayRadius && Math.abs(Math.hypot(...barnardProbe.displayPosition) - barnardReference.displayRadius) < 1e-12, 'Barnard display radius did not remain fixed at the J2016.0 median.');
+assert(barnardProbe.ra !== barnardReference.ra && barnardProbe.dec !== barnardReference.dec && barnardProbe.distancePc > barnardReference.distancePc, 'Barnard selected-time probe did not independently change both direction and model distance.');
 
 const solar = await json('src/data/solar-system.json');
 const solarBodies = [
@@ -194,6 +213,22 @@ const report = {
     minimumParallaxMas: Math.min(...gaia.stars.map((star) => star.parallax)),
     minimumParallaxOverError: Math.min(...gaia.stars.map((star) => star.parallax_over_error)),
     distanceRangePc: [Math.min(...gaia.stars.map((star) => star.r_med_geo)), Math.max(...gaia.stars.map((star) => star.r_med_geo))],
+    selectedTime: {
+      status: gaia.motionModel.status,
+      yearOffsetWindow: [gaia.motionModel.minYearOffset, gaia.motionModel.maxYearOffset],
+      stepYears: gaia.motionModel.stepYears,
+      timeScale: gaia.motionModel.timeScale,
+      probeSourceId: BARNARD_SOURCE_ID,
+      probeYearOffset: 1000,
+      referenceRaDecDeg: [barnardReference.ra, barnardReference.dec],
+      probeRaDecDeg: [barnardProbe.ra, barnardProbe.dec],
+      angularChangeDeg: barnardAngularChange * 180 / Math.PI,
+      referenceDistancePc: barnardReference.distancePc,
+      probeModelDistancePc: barnardProbe.distancePc,
+      fixedDisplayRadius: barnardProbe.displayRadius,
+      radialVelocityAssumption: 0,
+      selectedTimeCovariance: null,
+    },
     exactRawRuntimeMatch: true,
   },
   referenceWorlds,
